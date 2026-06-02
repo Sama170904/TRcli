@@ -34,7 +34,7 @@ The typical NY open pattern:
 - [[Draw on Liquidity]] — the NY session drives price to the day's main liquidity target
 - [[Fair Value Gap]] — FVGs on the 1M–5M that form at 13:30 GMT are precision NY entry zones
 - [[SMT Divergence]] — NQ vs ES divergence at NY open is a powerful filter for direction
-- [[Session Highs/Lows]] — NY session high/low become key reference points for the next day
+- [[Session Highs - Lows|Session Highs/Lows]] — NY session high/low become key reference points for the next day
 - [[Displacement Candle]] — the NY open displacement candle at 13:30 GMT is often the day's cleanest setup
 - [[IFVG]] — IFVGs forming in the first 30 minutes of NY open are among the strongest short-term setups
 - [[Higher Timeframe Bias]] — NY must align with the 4H bias; NY moves that fight HTF tend to reverse by EOD

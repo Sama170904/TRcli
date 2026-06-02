@@ -1,33 +1,33 @@
 {
-  "total_sessions": 3,
-  "total_pnl": 470.0,
-  "wins": 1,
+  "total_sessions": 4,
+  "total_pnl": 1180.0,
+  "wins": 2,
   "losses": 1,
   "breakevens": 1,
-  "win_rate_sessions": 33.3,
+  "win_rate_sessions": 50.0,
   "recent_lessons": [
-    "1. La paciencia de no FOMO-comprar en ATH: Esperar a que la trampa de apertura ocurriera en lugar de comprar la ruptura del ATH te protegió de un stop loss masivo de 190 puntos.",
-    "Entender el Vacío de Liquidez (Voids): Identificaste perfectamente que aunque S&P ya había mitigado, Nasdaq aún debía bajar a rellenar sus propios gaps antes de subir. Tu prudencia salvó la cuenta.",
-    "Respeto Absoluto a la Fricción del 5m FVG: Utilizar la resistencia del 5m FVG de arriba para mover a BE fue una ejecución quirúrgica que transformó una potencial pérdida completa en un scratch limpio de $0.",
     "1. La Salida Discrecional como Herramienta de Supervivencia: Aprender a cortar pérdidas de forma proactiva cuando la acción del precio se invalida o se vuelve sucia en tu contra es el sello distintivo de un trader profesional. Salvar capital es ganar a largo plazo.",
     "Monitoreo Multimercado (NQ vs. ES): Las divergencias de correlación son leading indicators de alta precisión. Si NQ quiere bajar pero ES se sostiene firmemente en un FVG de demanda, el corto tiene los días contados. Siempre debemos verificar que ambos activos se apoyen mutuamente.",
-    "El Respeto a las Zonas de Descuento (Discount): Tomar cortos cuando las temporalidades de 1H, 30m y 15m están en descuento profundo conlleva un riesgo elevado de rebotes violentos (trampas institucionales). La próxima vez, priorizaremos esperar a que la corrección finalice en demanda para incorporarnos únicamente a las compras institucionales."
+    "El Respeto a las Zonas de Descuento (Discount): Tomar cortos cuando las temporalidades de 1H, 30m y 15m están en descuento profundo conlleva un riesgo elevado de rebotes violentos (trampas institucionales). La próxima vez, priorizaremos esperar a que la corrección finalice en demanda para incorporarnos únicamente a las compras institucionales.",
+    "1. La Disciplina ante el Bias Paga Rentabilidad: Alinearse estrictamente con el HTF Bias (Bullish) en zona de descuento macro y descartar los cortos contra-tendencia es la base de los trades de alta probabilidad.",
+    "La Espera del Retesteo Reduce el Riesgo: No entrar persiguiendo velas de expansión alcista sino esperar con paciencia el pullback al FVG mitigador es la diferencia entre ser liquidado o lograr una entrada limpia con excelente R:R.",
+    "El Plan Vence a la Intuición: Ignorar el impulso de tomar shorts discrecionales (incluso cuando otros mentores o el ruido de micro-temporalidades sugerían caídas) y aferrarse a las reglas del manual operativo condujo a una sesión sumamente rentable."
   ],
   "warnings": [
     {
       "error": "Ignorar Resistencia",
-      "count": 3,
+      "count": 4,
       "percentage": 100.0
     },
     {
       "error": "FOMO",
-      "count": 1,
-      "percentage": 33.3
+      "count": 2,
+      "percentage": 50.0
     },
     {
       "error": "Sobreoperar (Overtrading)",
       "count": 1,
-      "percentage": 33.3
+      "percentage": 25.0
     }
   ]
 }

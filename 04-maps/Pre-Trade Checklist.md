@@ -20,7 +20,7 @@ The Pre-Trade Checklist is the **daily routine completed before any trade can be
 ### Phase 2 — Before London Open (07:30–07:55 GMT)
 - [ ] Read the 4H chart — confirm the [[Higher Timeframe Bias]] is still intact or note if a [[Change of Character]] has occurred
 - [ ] Mark the [[Asian Session Range]] high and low precisely
-- [ ] Mark the previous day's high and low ([[Session Highs/Lows]])
+- [ ] Mark the previous day's high and low ([[Session Highs - Lows|Session Highs/Lows]])
 - [ ] Identify the nearest [[Buy-Side Liquidity]] and [[Sell-Side Liquidity]] levels
 - [ ] Identify the [[Draw on Liquidity]] for today — where is price most likely going?
 - [ ] Mark any unmitigated [[Order Block (Bullish)|OBs]], [[Fair Value Gap|FVGs]], or [[IFVG|IFVGs]] in the area of interest
@@ -34,7 +34,7 @@ The Pre-Trade Checklist is the **daily routine completed before any trade can be
 
 ### Phase 4 — At NY Open (13:25 GMT)
 - [ ] Re-check the 4H bias — has anything changed since London?
-- [ ] Mark the London session high and low (new [[Session Highs/Lows]])
+- [ ] Mark the London session high and low (new [[Session Highs - Lows|Session Highs/Lows]])
 - [ ] Run the same process: watch for sweep, displacement, entry zone
 - [ ] Run [[Confluences Checklist]] before any entry
 

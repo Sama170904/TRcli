@@ -20,7 +20,7 @@ Where resting orders cluster. These are the *targets* price is drawn to before r
 - [[Equal Lows]] — double/triple bottoms; the densest, most obvious SSL pool
 - [[Internal Liquidity]] — stop clusters *within* the current range; TP1 targets
 - [[External Liquidity]] — stop clusters *beyond* the current range; final TP targets
-- [[Session Highs/Lows]] — previous session extremes; prime same-day liquidity levels
+- [[Session Highs - Lows|Session Highs/Lows]] — previous session extremes; prime same-day liquidity levels
 
 ---
 

@@ -53,11 +53,11 @@ Covers: the 1% rule, position sizing, stop loss placement, take profit targets, 
 |---|---|
 | Take a trade right now | [[Pre-Trade Checklist]] → [[Confluences Checklist]] → [[Entry Rules]] |
 | Understand IFVG deeply | [[IFVG]] → [[IFVG Setup]] → [[IFVG vs FVG]] |
-| Review all concepts | [[vault-index]] |
+| Review all concepts | [[Vault Index]] |
 | Log a completed trade | [[Trade Journal Template]] |
 | Understand why I keep losing | [[Common Mistakes]] → [[Psychology - Discipline]] |
 | Compare two entry models | [[OB vs IFVG]] or [[IFVG vs FVG]] |
-| Drop a raw idea | [[new-trade-idea]] |
+| Drop a raw idea | [[New Trade Idea]] |
 
 ---
 

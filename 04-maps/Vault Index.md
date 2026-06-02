@@ -48,7 +48,7 @@ This is the **master navigation map** for the vault. Every note is reachable fro
 ### Zones & Context
 - [[Premium Zone]] — upper 50% of range; short entries
 - [[Discount Zone]] — lower 50% of range; long entries
-- [[Session Highs/Lows]] — prior session reference levels; BSL/SSL
+- [[Session Highs - Lows|Session Highs/Lows]] — prior session reference levels; BSL/SSL
 
 ### Sessions & Timing
 - [[Kill Zones]] — the only valid time windows for entries

@@ -30,7 +30,7 @@ From an institutional perspective, these stops represent **buy orders at scale**
 - [[Stop Hunt]] — the mechanism used to reach BSL; same event from a different angle
 - [[Internal Liquidity]] — BSL relative to the current range is internal; beyond the range is external
 - [[External Liquidity]] — BSL at major swing highs beyond the current range is external liquidity
-- [[Session Highs/Lows]] — session highs are prime BSL areas, especially the previous day's high
+- [[Session Highs - Lows|Session Highs/Lows]] — session highs are prime BSL areas, especially the previous day's high
 - [[Swing High]] — every swing high is a BSL pool; mark them all on your working TF
 - [[Break of Structure]] — a sweep of BSL followed by a close below it is a bearish BOS
 - [[London Open]] — London open is the primary BSL sweep window; most reliable sweep timing

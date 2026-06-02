@@ -36,7 +36,7 @@ How the three sessions fit into one repeating daily narrative.
 
 Levels created by sessions that become liquidity targets for the next one.
 
-- [[Session Highs/Lows]] — each session's extremes become BSL/SSL for the next session
+- [[Session Highs - Lows|Session Highs/Lows]] — each session's extremes become BSL/SSL for the next session
 - [[Asian Session Range]] — the Asian high and low are London's primary sweep targets
 - [[Buy-Side Liquidity]] — session highs accumulate BSL; marked before each new session
 - [[Sell-Side Liquidity]] — session lows accumulate SSL; marked before each new session

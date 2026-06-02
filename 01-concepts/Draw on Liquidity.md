@@ -32,7 +32,7 @@ Understanding the DOL prevents you from taking entries that are "in the way" of 
 - [[Higher Timeframe Bias]] — the HTF DOL (4H or 1D liquidity pool) is the macro target
 - [[Market Structure]] — structural swing points mark the locations of key DOL pools
 - [[Power of Three]] — in PO3 model, the distribution phase drives price to the DOL
-- [[Session Highs/Lows]] — prior session highs and lows are the most common intraday DOL targets
+- [[Session Highs - Lows|Session Highs/Lows]] — prior session highs and lows are the most common intraday DOL targets
 - [[Equal Highs]] — equal highs above price are the clearest, most visual DOL for a bullish move
 - [[Equal Lows]] — equal lows below price are the clearest, most visual DOL for a bearish move
 - [[Kill Zones]] — the DOL is typically reached during a kill zone; plan your TP timing around this

@@ -208,42 +208,73 @@ def main():
         capture_output=True,
         text=True
     )
+    
+    use_fallback = False
+    symbol = "MNQ=F"
+    resolution = "2"
+    
     if state_result.returncode != 0:
-        print(f"Error al conectar con TradingView: {state_result.stderr}", file=sys.stderr)
-        sys.exit(1)
+        print("Advertencia: No se pudo conectar con TradingView Desktop. Usando modo de contingencia (Yahoo Finance)...")
+        use_fallback = True
+    else:
+        try:
+            state_data = json.loads(state_result.stdout)
+            if not state_data.get("success"):
+                print("Advertencia: Estado de TradingView no disponible. Usando modo de contingencia...")
+                use_fallback = True
+            else:
+                symbol = state_data.get("chart_symbol", "MNQ1!")
+                resolution = state_data.get("chart_resolution", "2")
+        except Exception:
+            print("Advertencia: Error al descifrar estado de TradingView. Usando modo de contingencia...")
+            use_fallback = True
+
+    df = None
+    if not use_fallback:
+        print(f"Gráfico activo TradingView: {symbol} [{resolution}m]")
+        n_bars = 150
+        ohlcv_result = subprocess.run(
+            ["node", mcp_cli_path, "ohlcv", "-n", str(n_bars)],
+            capture_output=True,
+            text=True
+        )
+        if ohlcv_result.returncode == 0:
+            try:
+                ohlcv_data = json.loads(ohlcv_result.stdout)
+                if ohlcv_data.get("success"):
+                    bars = ohlcv_data["bars"]
+                    df = pd.DataFrame(bars)
+                    for col in ["open", "high", "low", "close", "volume"]:
+                        df[col] = df[col].astype(float)
+            except Exception:
+                pass
+        if df is None:
+            print("Advertencia: Falló la descarga desde TradingView. Intentando contingencia con Yahoo Finance...")
+            use_fallback = True
+
+    if use_fallback or df is None:
+        yf_symbol = "MNQ=F"
+        if "ES" in symbol.upper():
+            yf_symbol = "MES=F"
+        elif "GC" in symbol.upper():
+            yf_symbol = "GC=F"
+        elif "CL" in symbol.upper():
+            yf_symbol = "CL=F"
+            
+        print(f"Modo Contingencia Activo: Descargando datos para {yf_symbol} en temporalidad de {resolution}m desde Yahoo Finance...")
         
-    state_data = json.loads(state_result.stdout)
-    if not state_data.get("success"):
-        print(f"Error en estado de TradingView: {state_data.get('error')}", file=sys.stderr)
-        sys.exit(1)
+        yf_interval = "2m"
+        if resolution == "1": yf_interval = "1m"
+        elif resolution == "5": yf_interval = "5m"
+        elif resolution == "15": yf_interval = "15m"
+        elif resolution == "30": yf_interval = "30m"
+        elif resolution in ["60", "1h"]: yf_interval = "1h"
         
-    symbol = state_data.get("chart_symbol", "Unknown")
-    resolution = state_data.get("chart_resolution", "Unknown")
-    print(f"Gráfico activo: {symbol} [{resolution}m]")
-    
-    # 2. Descargar últimas 150 velas
-    n_bars = 150
-    ohlcv_result = subprocess.run(
-        ["node", mcp_cli_path, "ohlcv", "-n", str(n_bars)],
-        capture_output=True,
-        text=True
-    )
-    if ohlcv_result.returncode != 0:
-        print(f"Error al descargar velas: {ohlcv_result.stderr}", file=sys.stderr)
-        sys.exit(1)
-        
-    ohlcv_data = json.loads(ohlcv_result.stdout)
-    if not ohlcv_data.get("success"):
-        print(f"Error en datos de velas: {ohlcv_data.get('error')}", file=sys.stderr)
-        sys.exit(1)
-        
-    bars = ohlcv_data["bars"]
-    df = pd.DataFrame(bars)
-    
-    # Asegurar tipos numéricos
-    for col in ["open", "high", "low", "close", "volume"]:
-        df[col] = df[col].astype(float)
-    
+        df = fetch_htf_data(yf_symbol, interval=yf_interval, period="5d", count=150)
+        if df is None or df.empty:
+            print("Error fatal: No se pudieron obtener datos históricos del mercado de contingencia.", file=sys.stderr)
+            sys.exit(1)
+            
     last_price = df["close"].iloc[-1]
     
     # 3. Descarga y análisis de TODAS las temporalidades (Top-Down Completo: 1m a 4H)
@@ -371,26 +402,29 @@ def main():
             "inversion_prob": inversion_prob
         })
     # 9.5. Obtener dibujos manuales en tiempo real del gráfico TradingView a través de CDP
-    print("Obteniendo marcaciones manuales del usuario (líneas y rectángulos) desde TradingView...")
-    js_get_drawings = r"(function(){try{var api=window.TradingViewApi._activeChartWidgetWV.value();var all=api.getAllShapes();var drawings=[];for(var i=0;i<all.length;i++){var s=all[i];var shape=api.getShapeById(s.id);if(shape){var pts=null;try{pts=shape.getPoints();}catch(e){}if(!pts){try{pts=shape.points();}catch(e){}}var props=null;try{props=shape.getProperties();}catch(e){}if(!props){try{props=shape.properties();}catch(e){}}drawings.push({id:s.id,name:s.name,points:pts,properties:props});}}return {success:true,drawings:drawings};}catch(e){return {success:false,error:e.message};}})()"
-    
-    drawings_eval = subprocess.run(
-        ["node", mcp_cli_path, "ui", "eval", js_get_drawings],
-        capture_output=True,
-        text=True
-    )
-    
     user_shapes = []
-    if drawings_eval.returncode == 0:
-        try:
-            draw_data = json.loads(drawings_eval.stdout)
-            if draw_data.get("success"):
-                if "result" in draw_data and isinstance(draw_data["result"], dict):
-                    user_shapes = draw_data["result"].get("drawings", [])
-                else:
-                    user_shapes = draw_data.get("drawings", [])
-        except Exception as e:
-            print(f"Advertencia al parsear dibujos manuales: {e}", file=sys.stderr)
+    if not use_fallback:
+        print("Obteniendo marcaciones manuales del usuario (líneas y rectángulos) desde TradingView...")
+        js_get_drawings = r"(function(){try{var api=window.TradingViewApi._activeChartWidgetWV.value();var all=api.getAllShapes();var drawings=[];for(var i=0;i<all.length;i++){var s=all[i];var shape=api.getShapeById(s.id);if(shape){var pts=null;try{pts=shape.getPoints();}catch(e){}if(!pts){try{pts=shape.points();}catch(e){}}var props=null;try{props=shape.getProperties();}catch(e){}if(!props){try{props=shape.properties();}catch(e){}}drawings.push({id:s.id,name:s.name,points:pts,properties:props});}}return {success:true,drawings:drawings};}catch(e){return {success:false,error:e.message};}})()"
+        
+        drawings_eval = subprocess.run(
+            ["node", mcp_cli_path, "ui", "eval", js_get_drawings],
+            capture_output=True,
+            text=True
+        )
+        
+        if drawings_eval.returncode == 0:
+            try:
+                draw_data = json.loads(drawings_eval.stdout)
+                if draw_data.get("success"):
+                    if "result" in draw_data and isinstance(draw_data["result"], dict):
+                        user_shapes = draw_data["result"].get("drawings", [])
+                    else:
+                        user_shapes = draw_data.get("drawings", [])
+            except Exception as e:
+                print(f"Advertencia al parsear dibujos manuales: {e}", file=sys.stderr)
+    else:
+        print("Aviso: Omitiendo marcaciones de TradingView (contingencia activa).")
             
     print(f"Se detectaron {len(user_shapes)} marcaciones manuales en tu gráfico.")
     
@@ -490,6 +524,34 @@ def main():
         except Exception:
             pass
 
+    # 10.5. Ejecutar la clasificación predictiva por Machine Learning (SMC Setup Classifier)
+    ml_classifier_path = os.path.join(script_dir, "ml_setup_classifier.py")
+    ml_result = ""
+    if os.path.exists(ml_classifier_path):
+        detected_confs = ["kz"]
+        if len(bprs) > 0: detected_confs.append("bpr")
+        if len(active_fvgs) > 0: detected_confs.append("fvg")
+        if len(active_obs) > 0: detected_confs.append("ob")
+        if smt_result and "DETECTADO" in smt_result: detected_confs.append("smt")
+        if htf_analysis['1h']['bias'] != "Neutral": detected_confs.append("bias")
+        
+        confs_arg = ",".join(detected_confs)
+        dir_arg = "Long" if "Bullish" in htf_analysis['1h']['bias'] else "Short" if "Bearish" in htf_analysis['1h']['bias'] else "Long"
+        inst_arg = "ES" if "ES" in symbol.upper() else "NQ"
+        
+        try:
+            res = subprocess.run(
+                [sys.executable, ml_classifier_path, "--predict", "--inst", inst_arg, "--dir", dir_arg, "--sess", "NY AM KZ", "--confs", confs_arg],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace"
+            )
+            if res.returncode == 0:
+                ml_result = res.stdout.strip()
+        except Exception as e:
+            print(f"Advertencia al ejecutar el clasificador ML: {e}", file=sys.stderr)
+
     # Imprimir en consola de forma espectacular
     print("\n=========================================================")
     print("=== REPORTE AVANZADO PRE-TRADE: MAPA DE CONFLUENCIAS ===")
@@ -541,6 +603,9 @@ def main():
             for les in psych_data["recent_lessons"][-3:]:
                 print(f" * {les}")
         print("=========================================================")
+        
+    if ml_result:
+        print("\n" + ml_result)
 
     # 11. Generar Visualización con Matplotlib
     fig, ax = plt.subplots(figsize=(15, 8))
@@ -711,6 +776,18 @@ Este reporte ha sido generado según los lineamientos de tu **Manual Operativo d
         else:
             f.write("> [!NOTE]\n> Aún no se han detectado perfiles psicológicos previos. Asegúrate de registrar tus autopsias de sesión diarias en la carpeta `bitacoras/` para activar la retroalimentación de riesgo.\n")
 
+        if ml_result:
+            f.write(f"""
+---
+
+## 🧠 Predicción de Machine Learning (SMC Setup Classifier)
+El clasificador de Inteligencia Artificial analizó la confluencia de este escenario de pre-sesión con tus datos históricos de trade:
+
+```text
+{ml_result}
+```
+""")
+
         f.write("""
 ---
 
@@ -785,15 +862,15 @@ Análisis de temporalidades HTF de Nasdaq en el fondo sin alterar tu TradingView
             f.write("  * *No se detectan OBs o FVGs de 15m inmitigados cercanos.*\n")
         else:
             for ob in htf_analysis["15m"]["obs"][:2]:
-                f.write(f"  * OB de 15m {ob['type']}: Rango `{ob['bottom']:.2f} - {ob['top']:.2f}` | Ver [[order-block-bullish]] o [[order-block-bearish]]\n")
+                f.write(f"  * OB de 15m {ob['type']}: Rango `{ob['bottom']:.2f} - {ob['top']:.2f}` | Ver [[Order Block (Bullish)]] o [[Order Block (Bearish)]]\n")
             for fvg in htf_analysis["15m"]["fvgs"][:2]:
-                f.write(f"  * FVG de 15m {fvg['type']}: Rango `{fvg['bottom']:.2f} - {fvg['top']:.2f}` | Ver [[fair-value-gap]]\n")
+                f.write(f"  * FVG de 15m {fvg['type']}: Rango `{fvg['bottom']:.2f} - {fvg['top']:.2f}` | Ver [[Fair Value Gap]]\n")
 
         f.write(f"""
 ---
 
 ## ⚡ Correlación Inter-Mercado (SMT Divergence)
-* **Estado SMT:** `{smt_result if smt_result else 'S&P 500 (MES) y Nasdaq (MNQ) alineados de forma regular en el Open (Sin divergencias activas). Ver [[smt-divergence]]'}`
+* **Estado SMT:** `{smt_result if smt_result else 'S&P 500 (MES) y Nasdaq (MNQ) alineados de forma regular en el Open (Sin divergencias activas). Ver [[SMT Divergence]]'}`
 
 ---
 
@@ -803,21 +880,21 @@ Análisis de temporalidades HTF de Nasdaq en el fondo sin alterar tu TradingView
 Niveles clave para buscar barridas de liquidez (*sweeps*) en la apertura de sesión o Killzone:
 """)
         if last_swing_high is not None:
-            f.write(f"* **Liquidez Externa Superior (Swing High):** `{last_swing_high['Level']}` (Vela #{last_swing_high.name}) | Ver [[external-liquidity]] y [[swing-high]]\n")
+            f.write(f"* **Liquidez Externa Superior (Swing High):** `{last_swing_high['Level']}` (Vela #{last_swing_high.name}) | Ver [[External Liquidity]] y [[Swing High]]\n")
         if last_swing_low is not None:
-            f.write(f"* **Liquidez Externa Inferior (Swing Low):** `{last_swing_low['Level']}` (Vela #{last_swing_low.name}) | Ver [[external-liquidity]] y [[swing-low]]\n")
+            f.write(f"* **Liquidez Externa Inferior (Swing Low):** `{last_swing_low['Level']}` (Vela #{last_swing_low.name}) | Ver [[External Liquidity]] y [[Swing Low]]\n")
             
         f.write("\n* **Pools de Liquidez Interna Activos (Unswept):**\n")
         if len(active_liquidity) == 0:
-            f.write("  * *No se detectan pools de liquidez interna inmitigados en el rango de precios actual. Ver [[internal-liquidity]]*\n")
+            f.write("  * *No se detectan pools de liquidez interna inmitigados en el rango de precios actual. Ver [[Internal Liquidity]]*\n")
         else:
             for idx, row in active_liquidity.iterrows():
                 liq_dir = "Alcista (Highs) 🟢" if row["Liquidity"] == 1 else "Bajista (Lows) 🔴"
-                f.write(f"  * Pool {liq_dir} en nivel `{row['Level']:.2f}` en la vela #{idx} | Ver [[liquidity-sweep]]\n")
+                f.write(f"  * Pool {liq_dir} en nivel `{row['Level']:.2f}` en la vela #{idx} | Ver [[Liquidity Sweep]]\n")
             
         f.write("""
 ### 🟢 2. Bloques de Orden de Demanda (Soportes / Compras)
-Zonas institucionales activas de alta concentración de compras limitadas. Ver [[order-block-bullish]].
+Zonas institucionales activas de alta concentración de compras limitadas. Ver [[Order Block (Bullish)]].
 
 | Tipo | Rango de Precio | Volumen | Estado |
 | :--- | :--- | :--- | :--- |
@@ -827,7 +904,7 @@ Zonas institucionales activas de alta concentración de compras limitadas. Ver [
             
         f.write("""
 ### 🔴 3. Bloques de Orden de Oferta (Resistencias / Ventas)
-Zonas institucionales activas de alta concentración de ventas limitadas. Ver [[order-block-bearish]].
+Zonas institucionales activas de alta concentración de ventas limitadas. Ver [[Order Block (Bearish)]].
 
 | Tipo | Rango de Precio | Volumen | Estado |
 | :--- | :--- | :--- | :--- |
@@ -839,7 +916,7 @@ Zonas institucionales activas de alta concentración de ventas limitadas. Ver [[
 ---
 
 ## 🌀 4. Anatomía de Fair Value Gaps (FVG) e Inversiones
-Análisis detallado de imbalances de precios y su **probabilidad de inversión (iFVG)** según la secuencia de sus 3 velas. Ver [[fair-value-gap]] e [[ifvg]].
+Análisis detallado de imbalances de precios y su **probabilidad de inversión (iFVG)** según la secuencia de sus 3 velas. Ver [[Fair Value Gap]] e [[IFVG]].
 
 | Dirección | Rango de FVG | Perfil de Velas | Probabilidad de Inversión / Comportamiento |
 | :--- | :--- | :--- | :--- |
@@ -856,7 +933,7 @@ Análisis detallado de imbalances de precios y su **probabilidad de inversión (
 ---
 
 ## 🟣 5. Balanced Price Ranges (BPR) Detectados
-Solapamientos de FVG alcistas y bajistas en el mismo nivel de precios. Actúan como soportes/resistencias magnéticos de altísima precisión. Ver [[balanced-price-range]].
+Solapamientos de FVG alcistas y bajistas en el mismo nivel de precios. Actúan como soportes/resistencias magnéticos de altísima precisión. Ver [[Balanced Price Range]].
 """)
         if len(bprs) == 0:
             f.write("* *No se detectan Balanced Price Ranges (BPR) solapados en las velas analizadas.*\n")
@@ -868,7 +945,7 @@ Solapamientos de FVG alcistas y bajistas en el mismo nivel de precios. Actúan c
 ---
 
 ## 🔄 6. Estructura de Mercado Reciente (BOS / CHoCH)
-Rupturas de estructura registradas en el gráfico. Ver [[market-structure]], [[break-of-structure]] y [[change-of-character]]:
+Rupturas de estructura registradas en el gráfico. Ver [[Market Structure]], [[Break of Structure]] y [[Change of Character]]:
 """)
         for idx, row in recent_bos.iterrows():
             struct_name = "BOS (Break of Structure)" if not pd.isna(row["BOS"]) else "CHoCH (Change of Character)"

@@ -37,5 +37,5 @@ A liquidity sweep (also called a stop hunt) is when price **temporarily moves be
 - [[Asian Session Range]] — the Asian session high and low are the most predictable sweep targets at London open
 - [[Kill Zones]] — sweeps outside kill zones are unreliable; timing is as important as the pattern
 - [[Change of Character]] — a clean sweep followed by a reversal candle = CHOCH confirmed on the lower TF
-- [[Session Highs/Lows]] — prior session highs and lows are prime sweep targets each new session
+- [[Session Highs - Lows|Session Highs/Lows]] — prior session highs and lows are prime sweep targets each new session
 - [[SMT Divergence]] — SMT between correlated pairs at the moment of a sweep = highest-probability reversal signal

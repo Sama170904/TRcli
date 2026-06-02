@@ -29,7 +29,7 @@ The Asian session's high and low are the two critical levels: one will be swept 
 - [[Power of Three]] — Asian session = the "accumulation" phase of the PO3 model
 - [[Buy-Side Liquidity]] — the Asian session high is BSL — potential London short trigger
 - [[Sell-Side Liquidity]] — the Asian session low is SSL — potential London long trigger
-- [[Session Highs/Lows]] — Asian highs/lows are the most important same-day reference points
+- [[Session Highs - Lows|Session Highs/Lows]] — Asian highs/lows are the most important same-day reference points
 - [[Liquidity Sweep]] — the Asian range extremes are textbook sweep targets at London open
 - [[Pre-Trade Checklist]] — marking the Asian range is step one of the daily pre-trade routine
 - [[Equal Highs]] — when two or more Asian sessions create highs at the same level, they form equal highs = magnified BSL
