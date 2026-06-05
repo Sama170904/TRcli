@@ -252,15 +252,15 @@ def main():
             print("Advertencia: Falló la descarga desde TradingView. Intentando contingencia con Yahoo Finance...")
             use_fallback = True
 
+    yf_symbol = "MNQ=F"
+    if "ES" in symbol.upper():
+        yf_symbol = "MES=F"
+    elif "GC" in symbol.upper():
+        yf_symbol = "GC=F"
+    elif "CL" in symbol.upper():
+        yf_symbol = "CL=F"
+
     if use_fallback or df is None:
-        yf_symbol = "MNQ=F"
-        if "ES" in symbol.upper():
-            yf_symbol = "MES=F"
-        elif "GC" in symbol.upper():
-            yf_symbol = "GC=F"
-        elif "CL" in symbol.upper():
-            yf_symbol = "CL=F"
-            
         print(f"Modo Contingencia Activo: Descargando datos para {yf_symbol} en temporalidad de {resolution}m desde Yahoo Finance...")
         
         yf_interval = "2m"
@@ -279,12 +279,12 @@ def main():
     
     # 3. Descarga y análisis de TODAS las temporalidades (Top-Down Completo: 1m a 4H)
     print("Iniciando análisis Top-Down Multitemporalidad Completo (1m a 4H) en segundo plano...")
-    df_1m = fetch_htf_data("MNQ=F", interval="1m", period="2d", count=500)
-    df_2m = fetch_htf_data("MNQ=F", interval="2m", period="5d", count=200)
-    df_5m = fetch_htf_data("MNQ=F", interval="5m", period="5d", count=200)
-    df_15m = fetch_htf_data("MNQ=F", interval="15m", period="5d", count=200)
-    df_30m = fetch_htf_data("MNQ=F", interval="30m", period="10d", count=200)
-    df_1h = fetch_htf_data("MNQ=F", interval="1h", period="30d", count=200)
+    df_1m = fetch_htf_data(yf_symbol, interval="1m", period="2d", count=500)
+    df_2m = fetch_htf_data(yf_symbol, interval="2m", period="5d", count=200)
+    df_5m = fetch_htf_data(yf_symbol, interval="5m", period="5d", count=200)
+    df_15m = fetch_htf_data(yf_symbol, interval="15m", period="5d", count=200)
+    df_30m = fetch_htf_data(yf_symbol, interval="30m", period="10d", count=200)
+    df_1h = fetch_htf_data(yf_symbol, interval="1h", period="30d", count=200)
     
     # Resamplear temporalidades faltantes (3m, 4m y 4H) para evadir limitaciones de yfinance
     df_3m = None
@@ -726,8 +726,16 @@ def main():
     os.makedirs(bitacoras_dir, exist_ok=True)
     os.makedirs(imagenes_dir, exist_ok=True)
     
-    workspace_img_path = os.path.join(imagenes_dir, f"{today_str}_pre_trade.png")
-    workspace_report_path = os.path.join(bitacoras_dir, f"{today_str}_pre_trade.md")
+    symbol_clean = "MNQ"
+    if "ES" in symbol.upper():
+        symbol_clean = "MES"
+    elif "GC" in symbol.upper():
+        symbol_clean = "GC"
+    elif "CL" in symbol.upper():
+        symbol_clean = "CL"
+
+    workspace_img_path = os.path.join(imagenes_dir, f"{today_str}_pre_trade_{symbol_clean}.png")
+    workspace_report_path = os.path.join(bitacoras_dir, f"{today_str}_pre_trade_{symbol_clean}.md")
     
     # Rutas del directorio de artefactos activo de Gemini (espejo)
     artifact_dir = r"C:\Users\rsama\.gemini\antigravity-cli\brain\b648ecba-8292-44e4-b98d-350aa3c05f31"
@@ -966,7 +974,7 @@ Rupturas de estructura registradas en el gráfico. Ver [[Market Structure]], [[B
 
     # Guardar en local del usuario (relativo)
     with open(workspace_report_path, "w", encoding="utf-8") as f:
-        write_report_content(f, f"../imagenes/{today_str}_pre_trade.png")
+        write_report_content(f, f"../imagenes/{today_str}_pre_trade_{symbol_clean}.png")
 
     # Guardar en Gemini (absoluto)
     with open(gemini_report_path, "w", encoding="utf-8") as f:

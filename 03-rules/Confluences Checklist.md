@@ -16,8 +16,8 @@ The Confluences Checklist is the **real-time scoring system used before entering
 
 ### Group 1 — HTF Context (Contexto Macro)
 *Required structural foundations:*
-- [ ] **[[Higher Timeframe Bias]] is clear** — 4H/1D structure aligns with trade direction (Required)
-- [ ] **Zone Context** — Entry is in a [[Discount Zone]] for longs, or [[Premium Zone]] for shorts (Required)
+- [ ] **[[Higher Timeframe Bias]] or local LTF Intraday Bias is clear** — 4H/1D structure aligns with trade direction (Required, *except for LTF Scalping Retracements* where local 15m/5m bias alignment is required)
+- [ ] **Zone Context** — Entry is in a [[Discount Zone]] for longs, or [[Premium Zone]] for shorts on either the HTF or local execution timeframe (Required)
 - [ ] **PD Array Alignment** — Entry zone aligns with HTF OB, FVG, or Breaker (+1 point)
 
 ### Group 2 — Levels & Liquidity (Zonas de Interés)

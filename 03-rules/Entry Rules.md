@@ -14,10 +14,10 @@ An entry is NOT valid if even one of the core conditions is missing. The discipl
 
 ## Rules
 
-### Step 1 — Confirm HTF Bias
-- Read the 4H or 1D chart first — see [[Higher Timeframe Bias]]
+### Step 1 — Confirm Bias (HTF or LTF Scalping Exception)
+- Read the 4H or 1D chart first to establish the macro context — see [[Higher Timeframe Bias]]
 - Identify the current structural direction (bullish or bearish)
-- Only trade in that direction unless a clear [[Change of Character]] has confirmed a flip
+- Only trade in that direction for standard setups. For **LTF Scalping setups**, trading counter-HTF bias (retracements) is permitted if aligned with the local LTF Intraday Bias (confirmed by a 15m/5m structure shift and orderflow)
 
 ### Step 2 — Identify the Kill Zone
 - Check the clock — is it London open (08:00–11:00 GMT) or NY open (13:30–16:00 GMT)?

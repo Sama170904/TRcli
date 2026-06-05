@@ -43,7 +43,7 @@ Este archivo define el manual operativo de mi estrategia, las pautas de funciona
   - **ATH 1:1 R:R Exception (Excepción en Máximos Históricos):** Operar en LONG en zona de All-Time Highs (ATH) / Price Discovery está plenamente permitido. Dado que no existen objetivos de liquidez históricos por encima del precio para fijar un Take Profit estructural, **la operación se gestiona obligatoriamente con una relación Riesgo:Beneficio fija de 1:1** para asegurar ganancias rápidas basadas en el momentum del breakout.
   - Displacement Failure: The candle must break and invert the IFVG with strong momentum in ONE or a MAXIMUM OF TWO candles. Slow, choppy interaction invalidates the setup.
   - Counter-Momentum Strength: If the market expanded into the POI with extreme institutional velocity, a simple LTF IFVG (< 5m) is insufficient to hold the reversal. Discard the trade.
-  - Bias Alignment: The trade must align with the HTF Daily Bias.
+  - **Bias Alignment (Scalping Exception):** El trade no requiere alinearse obligatoriamente con el HTF Daily Bias, pero **DEBE estar en total sincronía con el sesgo local (LTF Intraday Bias)** confirmado en 15m/5m (estructura y flujo de órdenes local). Si el trade va en contra del HTF Daily Bias, se considera un trade de retroceso (counter-trend) y debe gestionarse con objetivos estrictamente internos (liquidez local o el PD Array opuesto más cercano) y una gestión de riesgo defensiva.
   - Resistance / Target Clarity: There must be a clear Draw on Liquidity (DOL) to justify the risk-reward ratio. If there are heavy OBs, BBs, or structural resistance directly blocking the immediate path of the trade, the setup is canceled.
 
   ## 6. MÉTRICAS DE PRECISIÓN Y EXCURSIÓN (MAE & MFE)

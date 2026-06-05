@@ -41,3 +41,19 @@ SMT (Smart Money Technique) Divergence is a **confirmation signal** that compare
 - [[Swing Low]] — SMT divergence involves one instrument making a new swing low while the other fails
 - [[Change of Character]] — SMT at a structural level often predicts a CHOCH before it prints
 - [[Market Structure]] — SMT reveals that the two instruments are diverging structurally; one leads the other
+
+---
+
+## 🧠 SMT en Tiempo Real: Ejecución Asimétrica de Liquidez (Caso de Estudio)
+
+En un entorno operativo en vivo, la Divergencia SMT revela qué activo ha completado su cacería de liquidez ("hizo su tarea") y se encuentra en espera de que el otro termine para poder caer juntos:
+
+*   **El Activo Fuerte (El Cazador):** Debe empujar al alza para barrer su máximo previo y tocar el bloque de órdenes de venta pasivas (mitigación premium real).
+*   **El Activo Débil (El Líder):** Como ya completó su mitigación premium previamente, falla en hacer un nuevo máximo. Acumula ventas y muestra debilidad relativa.
+*   **La Mecánica en Vivo:** El activo débil **no necesita volver a tocar su máximo**. En cuanto el activo fuerte barre su liquidez y choca con su bloque de órdenes, el mercado se queda sin compradores, y el activo débil (que ya está pre-mitigado y distribuido) cae primero y con mayor velocidad.
+
+### 📝 Caso de Estudio (04 de Junio de 2026):
+*   **MNQ** completó su mitigación en `30316.50` a las 9:52 AM. 
+*   **MES** continuó empujando hasta las 9:58 AM para barrer su máximo en `7564.50`.
+*   Durante ese intervalo, MNQ acumuló ventas haciendo un *Lower High* (`30305.50`). En cuanto MES barrió a las 9:58 AM, la subida terminó y MNQ se desplomó 80 puntos de forma inmediata.
+

@@ -23,7 +23,7 @@ Knowing your invalidation is as important as knowing your entry. A trader withou
 ### During a Live Trade — Exit Conditions
 - Price closes **through your stop-loss level** → exit at market immediately, no waiting
 - For an [[IFVG]] trade: price closes through the IFVG zone boundary (beyond the SL side) → exit immediately
-- [[Higher Timeframe Bias]] flips (clear 4H CHOCH against your trade) → exit at market
+- [[Higher Timeframe Bias]] flips against your trade (if trading trend-aligned) or local LTF intraday bias flips against your scalping direction (clear 15m/5m CHOCH opposing trade) → exit at market
 - [[Internal Liquidity]] is hit with a strong displacement candle in the wrong direction → exit or reduce
 
 ### Special Rules

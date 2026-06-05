@@ -1,10 +1,10 @@
 {
-  "total_sessions": 4,
-  "total_pnl": 1180.0,
-  "wins": 2,
-  "losses": 1,
+  "total_sessions": 7,
+  "total_pnl": 996.0,
+  "wins": 3,
+  "losses": 3,
   "breakevens": 1,
-  "win_rate_sessions": 50.0,
+  "win_rate_sessions": 42.9,
   "recent_lessons": [
     "1. La Salida Discrecional como Herramienta de Supervivencia: Aprender a cortar pérdidas de forma proactiva cuando la acción del precio se invalida o se vuelve sucia en tu contra es el sello distintivo de un trader profesional. Salvar capital es ganar a largo plazo.",
     "Monitoreo Multimercado (NQ vs. ES): Las divergencias de correlación son leading indicators de alta precisión. Si NQ quiere bajar pero ES se sostiene firmemente en un FVG de demanda, el corto tiene los días contados. Siempre debemos verificar que ambos activos se apoyen mutuamente.",
@@ -16,18 +16,18 @@
   "warnings": [
     {
       "error": "Ignorar Resistencia",
-      "count": 4,
-      "percentage": 100.0
+      "count": 5,
+      "percentage": 71.4
     },
     {
       "error": "FOMO",
-      "count": 2,
-      "percentage": 50.0
+      "count": 3,
+      "percentage": 42.9
     },
     {
       "error": "Sobreoperar (Overtrading)",
       "count": 1,
-      "percentage": 25.0
+      "percentage": 14.3
     }
   ]
 }
