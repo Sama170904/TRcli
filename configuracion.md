@@ -67,6 +67,7 @@ Este archivo define el manual operativo de mi estrategia, las pautas de funciona
   * **`02-setups/`**, **`03-rules/`** y **`04-maps/`:** Estrategias operativas estructuradas, reglas de gestión de riesgo y Mapas de Contenido (MOC) para estudiar de forma interactiva.
   * **`templates/` (Carpeta de Plantillas):** Contiene las plantillas de Obsidian (`Session-Template.md` y `Pre-Trade-Template.md`) que **yo (Antigravity)** utilizo como modelo para autogenerar tus reportes diarios de forma estructurada.
   * **`scripts/` (Carpeta de Inteligencia):** Contiene `analyze_smc.py`, `calculate_excursions.py` (cálculo automático de MAE/MFE), `analyze_journal.py` (perfil psicológico) y `ml_setup_classifier.py` (motor de Machine Learning para clasificar probabilidad de setups en base a tus confluencias).
+  * **`ninjatrader-mcp/` (Servidor de Integración de NinjaTrader):** Puente local MCP para conectar NinjaTrader 8 con la IA. Permite leer cuentas, posiciones, órdenes vigentes y el libro de órdenes (DOM).
   * **`bitacoras/` (Carpeta):** Almacena dos archivos interconectados por sesión diaria:
     1.  **`YYYY-MM-DD_pre_trade.md`:** Escáner estructural de confluencias de pre-sesión. Contiene enlaces Wiki-links a los conceptos detectados (ej: `[[Fair Value Gap]]`) y un enlace directo a la autopsia (`YYYY-MM-DD_session.md`).
     2.  **`YYYY-MM-DD_session.md`:** Autopsia detallada de la sesión, trades tomados y lecciones. Contiene un enlace de regreso al mapa pre-trade (`YYYY-MM-DD_pre_trade.md`).
@@ -147,6 +148,25 @@ Este archivo define el manual operativo de mi estrategia, las pautas de funciona
      ```powershell
      python scripts/analyze_journal.py
      ```
+
+  ### E. Conexión de NinjaTrader 8 mediante el MCP Server (McpBridge)
+  Para que la IA pueda visualizar tus cuentas, posiciones, órdenes y el libro de órdenes (Depth of Market) desde tu terminal de NinjaTrader 8 Desktop, disponemos de una integración local mediante el Add-On `McpBridgeAddon`.
+
+  * **Componentes del Puente:**
+    1. **McpBridgeAddon.cs:** Servidor HTTP en C# ejecutado en segundo plano dentro de NinjaTrader 8 que expone los datos de cotizaciones y flujo de órdenes localmente en el puerto `7890`.
+    2. **ninjatrader-mcp:** Servidor Node.js local que conecta el canal de la IA con el puerto expuesto de NinjaTrader.
+  * **Cómo activarlo y compilarlo en NinjaTrader 8:**
+    1. El archivo `McpBridgeAddon.cs` ya ha sido creado automáticamente por Antigravity en tu directorio de Add-Ons: `C:\\Users\\rsama\\OneDrive\\Documentos\\NinjaTrader 8\\bin\\Custom\\AddOns\\McpBridgeAddon.cs`.
+    2. **Abre NinjaTrader 8** en tu máquina.
+    3. Presiona la combinación de teclas **`F11`** para abrir el editor de NinjaScript.
+    4. En la barra de herramientas superior del editor, haz clic en el botón **Compile** (o presiona **`F5`**). Escucharás un sonido característico que indica que se compiló correctamente sin errores.
+    5. **Reinicia NinjaTrader 8** por completo. Al arrancar, el Add-On levantará automáticamente el servidor HTTP en segundo plano escuchando en el puerto local **`7890`**.
+  * **Ejecutar el Servidor MCP:**
+    Puedes iniciar manualmente el servidor MCP de integración ejecutando:
+    ```powershell
+    cd C:\\Users\\rsama\\Documents\\proyecto-geminicli\\trading-journal\\ninjatrader-mcp
+    node src/server.js
+    ```
 
   ---
 
