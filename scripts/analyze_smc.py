@@ -3,6 +3,7 @@ os.environ["SMC_CREDIT"] = "0"
 import sys
 import json
 import subprocess
+import time
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -11,6 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from smartmoneyconcepts import smc
 import yfinance as yf
+import urllib.request
+import urllib.parse
 
 def get_candle_color(open_p, close_p):
     return "G" if close_p >= open_p else "R"
@@ -66,7 +69,7 @@ def fetch_htf_data(symbol_yf, interval, period, count=100):
             df[col] = df[col].astype(float)
         return df.tail(count)
     except Exception as e:
-        print(f"Advertencia al descargar temporalidad HTF ({interval}): {e}", file=sys.stderr)
+        print(f"Advertencia al descargar temporalidad HTF ({interval}) para {symbol_yf}: {e}", file=sys.stderr)
         return None
 
 def analyze_tf_structure(df, swing_len=5):
@@ -137,7 +140,6 @@ def analyze_tf_structure(df, swing_len=5):
 def check_smt_divergence():
     """Calcula la divergencia SMT entre Nasdaq (MNQ) y S&P 500 (MES) en LTF 2m"""
     try:
-        # Descargar últimos datos de 2m para MNQ y MES de Yahoo Finance (usamos 5d para robustez en fines de semana)
         df_nq = yf.download("MNQ=F", period="5d", interval="2m", progress=False).tail(40)
         df_es = yf.download("MES=F", period="5d", interval="2m", progress=False).tail(40)
         
@@ -154,26 +156,21 @@ def check_smt_divergence():
         else:
             df_es.columns = [c.lower() for c in df_es.columns]
         
-        # Calcular swings en ambos activos
         swings_nq = smc.swing_highs_lows(df_nq, swing_length=3)
         swings_es = smc.swing_highs_lows(df_es, swing_length=3)
         
-        # Buscar últimos swings de bajos significativos
         lows_nq = swings_nq[swings_nq["HighLow"] == -1].tail(2)
         lows_es = swings_es[swings_es["HighLow"] == -1].tail(2)
         
-        # Buscar últimos swings de altos significativos
         highs_nq = swings_nq[swings_nq["HighLow"] == 1].tail(2)
         highs_es = swings_es[swings_es["HighLow"] == 1].tail(2)
         
-        # SMT Alcista (Bullish SMT): NQ Higher Low (HL) mientras ES Lower Low (LL)
         if len(lows_nq) >= 2 and len(lows_es) >= 2:
             nq_l1, nq_l2 = lows_nq["Level"].iloc[-2], lows_nq["Level"].iloc[-1]
             es_l1, es_l2 = lows_es["Level"].iloc[-2], lows_es["Level"].iloc[-1]
             if nq_l2 > nq_l1 and es_l2 < es_l1:
                 return "SMT ALCISTA DETECTADO 🟢 (Nasdaq sostiene mínimos más altos mientras S&P barre a mínimos más bajos. ¡Acumulación institucional!)"
                 
-        # SMT Bajista (Bearish SMT): NQ Lower High (LH) mientras ES Higher High (HH)
         if len(highs_nq) >= 2 and len(highs_es) >= 2:
             nq_h1, nq_h2 = highs_nq["Level"].iloc[-2], highs_nq["Level"].iloc[-1]
             es_h1, es_h2 = highs_es["Level"].iloc[-2], highs_es["Level"].iloc[-1]
@@ -184,101 +181,48 @@ def check_smt_divergence():
     except Exception as e:
         return f"Advertencia SMT: No se pudo conectar a los servidores de datos de S&P 500: {e}"
 
-def main():
-    # Asegurar codificación UTF-8 en consola para evitar caídas por emojis en Windows
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-    if hasattr(sys.stderr, "reconfigure"):
-        sys.stderr.reconfigure(encoding="utf-8")
-    print("Iniciando escáner de Confluencias Avanzadas Pre-Trade...")
-    
-    # 0. Ejecutar el analizador de bitácoras para retroalimentar la red neuronal en vivo
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    analyze_journal_path = os.path.join(script_dir, "analyze_journal.py")
-    if os.path.exists(analyze_journal_path):
-        print("Retroalimentando red neuronal: leyendo historial de bitácoras de Obsidian...")
-        subprocess.run([sys.executable, analyze_journal_path], capture_output=True, text=True)
-        
-    # Ruta absoluta al CLI de TradingView MCP
-    mcp_cli_path = r"C:\Users\rsama\Documents\proyecto-geminicli\tradingview-mcp\src\cli\index.js"
-    
-    # 1. Obtener el estado del gráfico
-    state_result = subprocess.run(
-        ["node", mcp_cli_path, "status"],
-        capture_output=True,
-        text=True
-    )
-    
-    use_fallback = False
-    symbol = "MNQ=F"
-    resolution = "2"
-    
-    if state_result.returncode != 0:
-        print("Advertencia: No se pudo conectar con TradingView Desktop. Usando modo de contingencia (Yahoo Finance)...")
-        use_fallback = True
-    else:
-        try:
-            state_data = json.loads(state_result.stdout)
-            if not state_data.get("success"):
-                print("Advertencia: Estado de TradingView no disponible. Usando modo de contingencia...")
-                use_fallback = True
-            else:
-                symbol = state_data.get("chart_symbol", "MNQ1!")
-                resolution = state_data.get("chart_resolution", "2")
-        except Exception:
-            print("Advertencia: Error al descifrar estado de TradingView. Usando modo de contingencia...")
-            use_fallback = True
+def get_ninjatrader_orderflow():
+    """Consulta el servidor de NinjaTrader para obtener confluencias de Order Flow"""
+    try:
+        url_state = "http://localhost:7890/api/chart/state"
+        req = urllib.request.Request(url_state, method="GET")
+        with urllib.request.urlopen(req, timeout=3) as response:
+            if response.status == 200:
+                charts = json.loads(response.read().decode("utf-8"))
+                orderflow_data = []
+                for chart in charts:
+                    symbol = chart.get("instrument")
+                    timeframe = chart.get("timeframe")
+                    indicators = chart.get("indicators", [])
+                    
+                    # Filtrar indicadores relacionados con flujo de órdenes
+                    of_indicators = [ind for ind in indicators if any(keyword in ind.lower() for keyword in ["order flow", "cumulative delta", "volumetric", "delta", "volumen", "volume"])]
+                    
+                    indicator_values = {}
+                    for ind in of_indicators:
+                        encoded_symbol = urllib.parse.quote(symbol)
+                        encoded_ind = urllib.parse.quote(ind)
+                        url_val = f"http://localhost:7890/api/indicator/{encoded_symbol}/{encoded_ind}"
+                        try:
+                            req_val = urllib.request.Request(url_val, method="GET")
+                            with urllib.request.urlopen(req_val, timeout=2) as resp_val:
+                                if resp_val.status == 200:
+                                    val_data = json.loads(resp_val.read().decode("utf-8"))
+                                    indicator_values[ind] = val_data.get("value")
+                        except Exception:
+                            indicator_values[ind] = "No disponible"
+                            
+                    orderflow_data.append({
+                        "symbol": symbol,
+                        "timeframe": timeframe,
+                        "indicators": indicator_values
+                    })
+                return orderflow_data
+    except Exception:
+        return None
 
-    df = None
-    if not use_fallback:
-        print(f"Gráfico activo TradingView: {symbol} [{resolution}m]")
-        n_bars = 150
-        ohlcv_result = subprocess.run(
-            ["node", mcp_cli_path, "ohlcv", "-n", str(n_bars)],
-            capture_output=True,
-            text=True
-        )
-        if ohlcv_result.returncode == 0:
-            try:
-                ohlcv_data = json.loads(ohlcv_result.stdout)
-                if ohlcv_data.get("success"):
-                    bars = ohlcv_data["bars"]
-                    df = pd.DataFrame(bars)
-                    for col in ["open", "high", "low", "close", "volume"]:
-                        df[col] = df[col].astype(float)
-            except Exception:
-                pass
-        if df is None:
-            print("Advertencia: Falló la descarga desde TradingView. Intentando contingencia con Yahoo Finance...")
-            use_fallback = True
-
-    yf_symbol = "MNQ=F"
-    if "ES" in symbol.upper():
-        yf_symbol = "MES=F"
-    elif "GC" in symbol.upper():
-        yf_symbol = "GC=F"
-    elif "CL" in symbol.upper():
-        yf_symbol = "CL=F"
-
-    if use_fallback or df is None:
-        print(f"Modo Contingencia Activo: Descargando datos para {yf_symbol} en temporalidad de {resolution}m desde Yahoo Finance...")
-        
-        yf_interval = "2m"
-        if resolution == "1": yf_interval = "1m"
-        elif resolution == "5": yf_interval = "5m"
-        elif resolution == "15": yf_interval = "15m"
-        elif resolution == "30": yf_interval = "30m"
-        elif resolution in ["60", "1h"]: yf_interval = "1h"
-        
-        df = fetch_htf_data(yf_symbol, interval=yf_interval, period="5d", count=150)
-        if df is None or df.empty:
-            print("Error fatal: No se pudieron obtener datos históricos del mercado de contingencia.", file=sys.stderr)
-            sys.exit(1)
-            
-    last_price = df["close"].iloc[-1]
-    
-    # 3. Descarga y análisis de TODAS las temporalidades (Top-Down Completo: 1m a 4H)
-    print("Iniciando análisis Top-Down Multitemporalidad Completo (1m a 4H) en segundo plano...")
+def analyze_market_top_down(yf_symbol):
+    """Descarga y analiza de forma estructurada todas las 9 temporalidades de un mercado"""
     df_1m = fetch_htf_data(yf_symbol, interval="1m", period="2d", count=500)
     df_2m = fetch_htf_data(yf_symbol, interval="2m", period="5d", count=200)
     df_5m = fetch_htf_data(yf_symbol, interval="5m", period="5d", count=200)
@@ -286,7 +230,6 @@ def main():
     df_30m = fetch_htf_data(yf_symbol, interval="30m", period="10d", count=200)
     df_1h = fetch_htf_data(yf_symbol, interval="1h", period="30d", count=200)
     
-    # Resamplear temporalidades faltantes (3m, 4m y 4H) para evadir limitaciones de yfinance
     df_3m = None
     df_4m = None
     df_4h = None
@@ -294,36 +237,23 @@ def main():
     if df_1m is not None:
         try:
             df_3m = df_1m.resample('3T').agg({
-                'open': 'first',
-                'high': 'max',
-                'low': 'min',
-                'close': 'last',
-                'volume': 'sum'
+                'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'
             }).dropna().tail(200)
             df_4m = df_1m.resample('4T').agg({
-                'open': 'first',
-                'high': 'max',
-                'low': 'min',
-                'close': 'last',
-                'volume': 'sum'
+                'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'
             }).dropna().tail(200)
         except Exception as e:
-            print(f"Advertencia al resamplear LTF (3m/4m): {e}", file=sys.stderr)
+            print(f"Advertencia al resamplear LTF (3m/4m) para {yf_symbol}: {e}", file=sys.stderr)
             
     if df_1h is not None:
         try:
             df_4h = df_1h.resample('4H').agg({
-                'open': 'first',
-                'high': 'max',
-                'low': 'min',
-                'close': 'last',
-                'volume': 'sum'
+                'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'
             }).dropna().tail(200)
         except Exception as e:
-            print(f"Advertencia al resamplear HTF (4H): {e}", file=sys.stderr)
+            print(f"Advertencia al resamplear HTF (4H) para {yf_symbol}: {e}", file=sys.stderr)
             
-    # Analizar todas las temporalidades estructurales
-    all_tf_analysis = {
+    return {
         "4H": analyze_tf_structure(df_4h, swing_len=5),
         "1H": analyze_tf_structure(df_1h, swing_len=5),
         "30m": analyze_tf_structure(df_30m, swing_len=5),
@@ -333,105 +263,62 @@ def main():
         "3m": analyze_tf_structure(df_3m, swing_len=5),
         "2m": analyze_tf_structure(df_2m, swing_len=5),
         "1m": analyze_tf_structure(df_1m, swing_len=5),
+        "df_2m": df_2m if df_2m is not None else df_5m,
+        "last_price": float(df_2m["close"].iloc[-1]) if df_2m is not None else (float(df_5m["close"].iloc[-1]) if df_5m is not None else 0.0)
     }
 
-    # Redefinir htf_analysis para mantener compatibilidad hacia atrás
-    htf_analysis = {
-        "4H": all_tf_analysis["4H"],
-        "1H": all_tf_analysis["1H"],
-        "30m": all_tf_analysis["30m"],
-        "15m": all_tf_analysis["15m"],
-        "5m": all_tf_analysis["5m"],
-        "4m": all_tf_analysis["4m"],
-        "3m": all_tf_analysis["3m"],
-        "2m": all_tf_analysis["2m"],
-        "1m": all_tf_analysis["1m"],
-        "1h": all_tf_analysis["1H"], # Alias para compatibilidad
-    }
+def determine_relative_strength(mnq_analysis, mes_analysis):
+    """Calcula matemáticamente cuál mercado es más fuerte/débil y define el bias local"""
+    tfs = ["4H", "1H", "30m", "15m", "5m", "4m", "3m", "2m", "1m"]
     
-    # 4. Calcular Indicadores de Smart Money Concepts en LTF 2m
-    swings = smc.swing_highs_lows(df, swing_length=5)
-    obs = smc.ob(df, swings)
-    fvgs = smc.fvg(df)
-    bos_choch = smc.bos_choch(df, swings)
-    liquidity_df = smc.liquidity(df, swings, range_percent=0.005)
+    mnq_bullish = sum(1 for tf in tfs if "Bullish" in mnq_analysis[tf]["bias"])
+    mnq_bearish = sum(1 for tf in tfs if "Bearish" in mnq_analysis[tf]["bias"])
     
-    # Procesar Zonas Activas LTF 2m
-    active_obs = obs[obs["OB"].notna() & (obs["OB"] != 0) & ((obs["MitigatedIndex"] == 0) | obs["MitigatedIndex"].isna())]
-    active_fvgs = fvgs[fvgs["FVG"].notna() & (fvgs["FVG"] != 0) & ((fvgs["MitigatedIndex"] == 0) | fvgs["MitigatedIndex"].isna())]
-    active_liquidity = liquidity_df[liquidity_df["Liquidity"].notna() & (liquidity_df["Liquidity"] != 0) & ((liquidity_df["Swept"] == 0) | liquidity_df["Swept"].isna() | (liquidity_df["Swept"] == 0.0))]
-    recent_bos = bos_choch.dropna(subset=["BOS", "CHOCH"], how="all").tail(3)
-
-    # 6. Calcular divergencia SMT en vivo (Opción 3)
-    print("Calculando divergencia SMT contra S&P 500 en segundo plano...")
-    smt_result = check_smt_divergence()
+    mes_bullish = sum(1 for tf in tfs if "Bullish" in mes_analysis[tf]["bias"])
+    mes_bearish = sum(1 for tf in tfs if "Bearish" in mes_analysis[tf]["bias"])
     
-    # 7. Mapear Liquidez Externa (Últimos Swings LTF)
-    swing_highs = swings[swings["HighLow"] == 1]
-    swing_lows = swings[swings["HighLow"] == -1]
-    last_swing_high = swing_highs.iloc[-1] if len(swing_highs) > 0 else None
-    last_swing_low = swing_lows.iloc[-1] if len(swing_lows) > 0 else None
+    # Pesos estructurales adicionales para marcos altos (HTF)
+    mnq_weight = 0
+    if "Bullish" in mnq_analysis["4H"]["bias"]: mnq_weight += 2
+    if "Bullish" in mnq_analysis["1H"]["bias"]: mnq_weight += 1.5
+    if "Bullish" in mnq_analysis["15m"]["bias"]: mnq_weight += 1.0
+    if "Bearish" in mnq_analysis["4H"]["bias"]: mnq_weight -= 2
+    if "Bearish" in mnq_analysis["1H"]["bias"]: mnq_weight -= 1.5
+    if "Bearish" in mnq_analysis["15m"]["bias"]: mnq_weight -= 1.0
     
-    # 8. Detectar BPR (Balanced Price Ranges - Solapamientos de FVG)
-    bprs = []
-    recent_bull_fvgs = fvgs[fvgs["FVG"] == 1].tail(10)
-    recent_bear_fvgs = fvgs[fvgs["FVG"] == -1].tail(10)
-    for idx_bull, r_bull in recent_bull_fvgs.iterrows():
-        for idx_bear, r_bear in recent_bear_fvgs.iterrows():
-            low_overlap = max(r_bull["Bottom"], r_bear["Bottom"])
-            high_overlap = min(r_bull["Top"], r_bear["Top"])
-            if low_overlap < high_overlap:
-                bprs.append({
-                    "bottom": low_overlap,
-                    "top": high_overlap,
-                    "bull_index": int(idx_bull),
-                    "bear_index": int(idx_bear)
-                })
-                
-    # 9. Formatear datos de FVG con su Perfil de 3 Velas
-    formatted_fvgs = []
-    for idx, row in active_fvgs.iterrows():
-        fvg_type = int(row["FVG"])
-        profile_str, inversion_prob = analyze_fvg_profile(df, idx, fvg_type)
-        formatted_fvgs.append({
-            "index": int(idx),
-            "type": "Bullish" if fvg_type == 1 else "Bearish",
-            "bottom": row["Bottom"],
-            "top": row["Top"],
-            "profile": profile_str,
-            "inversion_prob": inversion_prob
-        })
-    # 9.5. Obtener dibujos manuales en tiempo real del gráfico TradingView a través de CDP
-    user_shapes = []
-    if not use_fallback:
-        print("Obteniendo marcaciones manuales del usuario (líneas y rectángulos) desde TradingView...")
-        js_get_drawings = r"(function(){try{var api=window.TradingViewApi._activeChartWidgetWV.value();var all=api.getAllShapes();var drawings=[];for(var i=0;i<all.length;i++){var s=all[i];var shape=api.getShapeById(s.id);if(shape){var pts=null;try{pts=shape.getPoints();}catch(e){}if(!pts){try{pts=shape.points();}catch(e){}}var props=null;try{props=shape.getProperties();}catch(e){}if(!props){try{props=shape.properties();}catch(e){}}drawings.push({id:s.id,name:s.name,points:pts,properties:props});}}return {success:true,drawings:drawings};}catch(e){return {success:false,error:e.message};}})()"
-        
-        drawings_eval = subprocess.run(
-            ["node", mcp_cli_path, "ui", "eval", js_get_drawings],
-            capture_output=True,
-            text=True
-        )
-        
-        if drawings_eval.returncode == 0:
-            try:
-                draw_data = json.loads(drawings_eval.stdout)
-                if draw_data.get("success"):
-                    if "result" in draw_data and isinstance(draw_data["result"], dict):
-                        user_shapes = draw_data["result"].get("drawings", [])
-                    else:
-                        user_shapes = draw_data.get("drawings", [])
-            except Exception as e:
-                print(f"Advertencia al parsear dibujos manuales: {e}", file=sys.stderr)
+    mes_weight = 0
+    if "Bullish" in mes_analysis["4H"]["bias"]: mes_weight += 2
+    if "Bullish" in mes_analysis["1H"]["bias"]: mes_weight += 1.5
+    if "Bullish" in mes_analysis["15m"]["bias"]: mes_weight += 1.0
+    if "Bearish" in mes_analysis["4H"]["bias"]: mes_weight -= 2
+    if "Bearish" in mes_analysis["1H"]["bias"]: mes_weight -= 1.5
+    if "Bearish" in mes_analysis["15m"]["bias"]: mes_weight -= 1.0
+    
+    mnq_score = mnq_bullish - mnq_bearish + mnq_weight
+    mes_score = mes_bullish - mes_bearish + mes_weight
+    
+    if mnq_score > mes_score:
+        most_bullish = "Nasdaq (MNQ) 🟢"
+        most_bearish = "S&P 500 (MES) 🔴"
+        bias = "Bullish local (Nasdaq liderando)" if mnq_score > 0 else "Bearish local (Nasdaq resistiendo mejor)"
+    elif mes_score > mnq_score:
+        most_bullish = "S&P 500 (MES) 🟢"
+        most_bearish = "Nasdaq (MNQ) 🔴"
+        bias = "Bullish local (S&P 500 liderando)" if mes_score > 0 else "Bearish local (S&P 500 resistiendo mejor)"
     else:
-        print("Aviso: Omitiendo marcaciones de TradingView (contingencia activa).")
-            
-    print(f"Se detectaron {len(user_shapes)} marcaciones manuales en tu gráfico.")
-    
+        most_bullish = "Alineados por igual"
+        most_bearish = "Alineados por igual"
+        bias = "Neutral / Sincronía Completa"
+        
+    return bias, most_bullish, most_bearish, mnq_score, mes_score
+
+def process_manual_drawings(drawings_list, tf_analysis, last_price):
+    """Compara las marcaciones manuales extraídas con los niveles calculados por SMC en el código"""
+    confluences = []
     manual_rectangles = []
     manual_lines = []
     
-    for s in user_shapes:
+    for s in drawings_list:
         name = s.get("name", "")
         pts = s.get("points")
         props = s.get("properties", {})
@@ -466,19 +353,16 @@ def main():
                     "color": props.get("linecolor", "#808080")
                 })
                 
-    drawings_confluences = []
     for rect in manual_rectangles:
         overlaps = []
         for tf in ["4H", "1H", "30m", "15m", "5m", "4m", "3m", "2m", "1m"]:
-            tf_data = all_tf_analysis[tf]
+            tf_data = tf_analysis[tf]
             for ob in tf_data.get("obs", []):
-                ob_type = "Demand OB" if ob["type"] == "Demand" else "Supply OB"
                 ob_bottom = ob["bottom"]
                 ob_top = ob["top"]
                 if max(rect["bottom"], ob_bottom) < min(rect["top"], ob_top):
                     overlaps.append(f"**OB {tf}** ({ob_bottom:.1f} - {ob_top:.1f})")
             for fvg in tf_data.get("fvgs", []):
-                fvg_type = "Bullish FVG" if fvg["type"] == "Bullish" else "Bearish FVG"
                 fvg_bottom = fvg["bottom"]
                 fvg_top = fvg["top"]
                 if max(rect["bottom"], fvg_bottom) < min(rect["top"], fvg_top):
@@ -488,7 +372,7 @@ def main():
         status = "🟢 PRECIO DENTRO" if is_inside else "🟡 Fuera del precio"
         label_text = f" con etiqueta '{rect['text']}'" if rect["text"] else ""
         overlap_str = f" | Confluencias: {', '.join(overlaps)}" if overlaps else " | Sin confluencia SMC directa"
-        drawings_confluences.append(
+        confluences.append(
             f"  * **Caja Gris{label_text}** en rango `{rect['bottom']:.2f} - {rect['top']:.2f}` | Estado: {status}{overlap_str}"
         )
         
@@ -498,23 +382,182 @@ def main():
         status = "🎯 PRECIO CERCA" if near_start else "Fuera de rango"
         label_text = f" con etiqueta '{line['text']}'" if line["text"] else ""
         
-        confluences = []
+        overlaps = []
         for tf in ["4H", "1H", "30m", "15m", "5m", "4m", "3m", "2m", "1m"]:
-            tf_data = all_tf_analysis[tf]
+            tf_data = tf_analysis[tf]
             for ob in tf_data.get("obs", []):
                 if ob["bottom"] <= line["price_start"] <= ob["top"]:
-                    confluences.append(f"dentro de **OB {tf}** ({ob['bottom']:.1f} - {ob['top']:.1f})")
+                    overlaps.append(f"dentro de **OB {tf}** ({ob['bottom']:.1f} - {ob['top']:.1f})")
             for fvg in tf_data.get("fvgs", []):
                 if fvg["bottom"] <= line["price_start"] <= fvg["top"]:
-                    confluences.append(f"dentro de **FVG {tf}** ({fvg['bottom']:.1f} - {fvg['top']:.1f})")
+                    overlaps.append(f"dentro de **FVG {tf}** ({fvg['bottom']:.1f} - {fvg['top']:.1f})")
                     
-        conf_str = f" | Ubicación: {', '.join(confluences)}" if confluences else ""
-        drawings_confluences.append(
+        conf_str = f" | Ubicación: {', '.join(overlaps)}" if overlaps else ""
+        confluences.append(
             f"  * **Línea Manual{label_text}** en nivel `{line['price_start']:.2f}` | Estado: {status}{conf_str}"
         )
+        
+    return confluences
 
-    # 10. Cargar Perfil de Riesgo Psicológico para la alerta del Guardia de Riesgo (Opción 2)
+def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+    print("Iniciando escáner de Confluencias Avanzadas Premarket (Multi-Market & Multi-TF)...")
+    
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    analyze_journal_path = os.path.join(script_dir, "analyze_journal.py")
+    if os.path.exists(analyze_journal_path):
+        print("Retroalimentando red neuronal: leyendo historial de bitácoras de Obsidian...")
+        subprocess.run([sys.executable, analyze_journal_path], capture_output=True, text=True)
+        
+    mcp_cli_path = r"C:\Users\rsama\Documents\proyecto-geminicli\tradingview-mcp\src\cli\index.js"
+    
+    # 1. Obtener estado original del gráfico
+    state_result = subprocess.run(
+        ["node", mcp_cli_path, "status"],
+        capture_output=True,
+        text=True
+    )
+    
+    use_fallback = False
+    orig_symbol = "CME_MINI:MNQ1!"
+    orig_resolution = "2"
+    
+    if state_result.returncode != 0:
+        print("Advertencia: No se pudo conectar con TradingView Desktop. Usando modo de contingencia (Yahoo Finance)...")
+        use_fallback = True
+    else:
+        try:
+            state_data = json.loads(state_result.stdout)
+            if not state_data.get("success") or not state_data.get("cdp_connected"):
+                print("Advertencia: CDP inactivo. Usando modo de contingencia...")
+                use_fallback = True
+            else:
+                orig_symbol = state_data.get("chart_symbol", "CME_MINI:MNQ1!")
+                orig_resolution = state_data.get("chart_resolution", "2")
+        except Exception:
+            print("Advertencia: Error al leer estado de TradingView. Usando modo de contingencia...")
+            use_fallback = True
+
+    # 2. Navegación multitemporal y extracción de marcaciones por CDP (1m a 4H) para MNQ y MES
+    drawings_by_market = {
+        "MNQ": [],
+        "MES": []
+    }
+    
+    market_symbols = {
+        "MNQ": "CME_MINI:MNQ1!",
+        "MES": "CME_MINI:MES1!"
+    }
+    
+    tf_map = {
+        "4H": "240", "1H": "60", "30m": "30", "15m": "15",
+        "5m": "5", "4m": "4", "3m": "3", "2m": "2", "1m": "1"
+    }
+    
+    if not use_fallback:
+        print("CDP ACTIVO: Iniciando recorrido multitemporal automatizado en TradingView...")
+        try:
+            for mkt_key, mkt_sym in market_symbols.items():
+                print(f"Cambiando gráfico a {mkt_sym}...")
+                subprocess.run(["node", mcp_cli_path, "symbol", mkt_sym], capture_output=True)
+                time.sleep(1.2) # Tiempo de carga del símbolo
+                
+                for tf_name, tf_val in tf_map.items():
+                    print(f" -> Escaneando temporalidad {tf_name} ({tf_val}m)...")
+                    subprocess.run(["node", mcp_cli_path, "timeframe", tf_val], capture_output=True)
+                    time.sleep(0.8) # Esperar a que renderice y carguen los dibujos del usuario
+                    
+                    # Evaluar shapes en el chart
+                    js_get_drawings = r"(function(){try{var api=window.TradingViewApi._activeChartWidgetWV.value();var all=api.getAllShapes();var drawings=[];for(var i=0;i<all.length;i++){var s=all[i];var shape=api.getShapeById(s.id);if(shape){var pts=null;try{pts=shape.getPoints();}catch(e){}if(!pts){try{pts=shape.points();}catch(e){}}var props=null;try{props=shape.getProperties();}catch(e){}if(!props){try{props=shape.properties();}catch(e){}}drawings.push({id:s.id,name:s.name,points:pts,properties:props});}}return {success:true,drawings:drawings};}catch(e){return {success:false,error:e.message};}})()"
+                    drawings_eval = subprocess.run(
+                        ["node", mcp_cli_path, "ui", "eval", js_get_drawings],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if drawings_eval.returncode == 0:
+                        try:
+                            draw_data = json.loads(drawings_eval.stdout)
+                            shapes = []
+                            if draw_data.get("success"):
+                                if "result" in draw_data and isinstance(draw_data["result"], dict):
+                                    shapes = draw_data["result"].get("drawings", [])
+                                else:
+                                    shapes = draw_data.get("drawings", [])
+                            for s in shapes:
+                                s["timeframe"] = tf_name
+                                drawings_by_market[mkt_key].append(s)
+                        except Exception as e:
+                            print(f"Error al decodificar dibujos en {mkt_key} {tf_name}: {e}", file=sys.stderr)
+            
+            # Restaurar el estado original del gráfico
+            print(f"Restaurando gráfico original a {orig_symbol} [{orig_resolution}m]...")
+            subprocess.run(["node", mcp_cli_path, "symbol", orig_symbol], capture_output=True)
+            time.sleep(1.0)
+            subprocess.run(["node", mcp_cli_path, "timeframe", orig_resolution], capture_output=True)
+            
+        except Exception as ex:
+            print(f"Error durante la automatización del gráfico: {ex}", file=sys.stderr)
+            use_fallback = True
+            
+    else:
+        print("Aviso: Omitiendo extracción de dibujos CDP (modo contingencia activo).")
+        
+    # 3. Descarga y análisis Top-Down completo en segundo plano para AMBOS mercados
+    print("Descargando datos históricos de Yahoo Finance...")
+    mnq_analysis = analyze_market_top_down("MNQ=F")
+    mes_analysis = analyze_market_top_down("MES=F")
+    
+    # 4. Calcular el sesgo y la fuerza relativa inter-mercado
+    bias_local, most_bullish, most_bearish, mnq_score, mes_score = determine_relative_strength(mnq_analysis, mes_analysis)
+    
+    # 5. Obtener alerta SMT en vivo
+    smt_result = check_smt_divergence()
+    
+    # Obtener confluencias de Order Flow de NinjaTrader
+    print("Consultando confluencias de Order Flow desde NinjaTrader...")
+    orderflow_data = get_ninjatrader_orderflow()
+    
+    # 6. Procesar confluencias para las marcaciones manuales recopiladas
+    mnq_confluences = process_manual_drawings(drawings_by_market["MNQ"], mnq_analysis, mnq_analysis["last_price"])
+    mes_confluences = process_manual_drawings(drawings_by_market["MES"], mes_analysis, mes_analysis["last_price"])
+    
+    # 7. Reglas de Gatillos y Filtros Negativos (Qué debe pasar y cuándo NO operar)
+    # Long triggers
+    long_triggers = (
+        f"1. **Barrida de Liquidez Estructural (Sweep):** El precio de {most_bullish.split(' ')[0]} debe barrer liquidez externa inferior "
+        f"(mínimo de sesión previa o swing low local en {mnq_analysis['15m']['obs'][0]['bottom']:.1f} o similar) en temporalidad intermedia.\n"
+        f"2. **Desplazamiento y Confirmación (iFVG):** Tras barrer liquidez, el precio debe desplazarse fuereña en el gráfico LTF (1m-5m) "
+        f"y cerrar con cuerpo completo por encima de un FVG bajista, convirtiéndolo en un Inverse FVG (iFVG).\n"
+        f"3. **Perfil de Entrada Preferente:** Priorizar perfiles G-R-G (Fáciles de Invertir) para validar el orderflow alcista con momentum."
+    )
+    # Short triggers
+    short_triggers = (
+        f"1. **Barrida de Liquidez Estructural (Sweep):** El precio de {most_bearish.split(' ')[0]} debe barrer liquidez externa superior "
+        f"(máximo de sesión previa o swing high local) y mitigar una zona de resistencia de Oferta.\n"
+        f"2. **Desplazamiento y Confirmación (iFVG):** Reacción impulsiva bajista en LTF que rompa y cierre por debajo de un FVG alcista "
+        f"(perfil R-G-R preferente) para validar la inversión institucional a iFVG.\n"
+        f"3. **Alineación de Fuerza:** Entrar en short en el mercado más débil para maximizar la velocidad de la caída."
+    )
+    # Bad idea for longs
+    bad_long = (
+        f"1. **Premium HTF:** Si el precio de MNQ o MES está cotizando dentro de zona Premium del rango de 1H/30m.\n"
+        f"2. **Mitigación Hostil:** Si el precio está chocando directamente con una resistencia fuerte o Supply OB de 1H/4H.\n"
+        f"3. **Divergencia SMT Bajista:** Si detectamos divergencia SMT Bajista (S&P 500 hace altos más altos pero Nasdaq falla en hacerlos), "
+        f"lo que indica distribución institucional activa."
+    )
+    # Bad idea for shorts
+    bad_short = (
+        f"1. **Discount HTF:** Si el precio se encuentra cotizando en zona de descuento estructural (Discount) de 1H/30m.\n"
+        f"2. **Soporte Hostil:** Si el precio se apoya en un Demand OB de 1H/4H inmitigado.\n"
+        f"3. **Divergencia SMT Alcista:** Si detectamos divergencia SMT Alcista (S&P 500 barre mínimos pero Nasdaq sostiene mínimos más altos), "
+        f"lo que indica acumulación e invalida ventas."
+    )
+
+    # 8. Cargar perfil psicológico del Guardia de Riesgo
     psych_profile_path = os.path.join(script_dir, "psych_profile.json")
     psych_data = None
     if os.path.exists(psych_profile_path):
@@ -524,247 +567,242 @@ def main():
         except Exception:
             pass
 
-    # 10.5. Ejecutar la clasificación predictiva por Machine Learning (SMC Setup Classifier)
+    # 9. Clasificación ML para ambos mercados
     ml_classifier_path = os.path.join(script_dir, "ml_setup_classifier.py")
-    ml_result = ""
+    ml_result_mnq = ""
+    ml_result_mes = ""
     if os.path.exists(ml_classifier_path):
-        detected_confs = ["kz"]
-        if len(bprs) > 0: detected_confs.append("bpr")
-        if len(active_fvgs) > 0: detected_confs.append("fvg")
-        if len(active_obs) > 0: detected_confs.append("ob")
-        if smt_result and "DETECTADO" in smt_result: detected_confs.append("smt")
-        if htf_analysis['1h']['bias'] != "Neutral": detected_confs.append("bias")
-        
-        confs_arg = ",".join(detected_confs)
-        dir_arg = "Long" if "Bullish" in htf_analysis['1h']['bias'] else "Short" if "Bearish" in htf_analysis['1h']['bias'] else "Long"
-        inst_arg = "ES" if "ES" in symbol.upper() else "NQ"
-        
-        try:
-            res = subprocess.run(
-                [sys.executable, ml_classifier_path, "--predict", "--inst", inst_arg, "--dir", dir_arg, "--sess", "NY AM KZ", "--confs", confs_arg],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace"
-            )
-            if res.returncode == 0:
-                ml_result = res.stdout.strip()
-        except Exception as e:
-            print(f"Advertencia al ejecutar el clasificador ML: {e}", file=sys.stderr)
-
-    # Imprimir en consola de forma espectacular
-    print("\n=========================================================")
-    print("=== REPORTE AVANZADO PRE-TRADE: MAPA DE CONFLUENCIAS ===")
-    print("=========================================================")
-    print(f"Activo: {symbol} | Precio Actual: {last_price}")
-    print(f"Sesgo Macro (1H HTF Bias): {htf_analysis['1h']['bias']}")
-    
-    if smt_result:
-        print(f"\n⚡ ALERTA SMT: {smt_result}")
-    else:
-        print("\n⚡ SMT Correlation: S&P 500 y Nasdaq alineados de forma regular (Sin divergencia activa).")
-        
-    if last_swing_high is not None:
-        print(f"Liquidez Externa Superior (Swing High): {last_swing_high['Level']} (Vela #{last_swing_high.name})")
-    if last_swing_low is not None:
-        print(f"Liquidez Externa Inferior (Swing Low): {last_swing_low['Level']} (Vela #{last_swing_low.name})")
-        
-    print("\n[Pools de Liquidez Interna (Unswept)]")
-    for idx, row in active_liquidity.iterrows():
-        liq_type = "Bullish (Highs) 🟢" if row["Liquidity"] == 1 else "Bearish (Lows) 🔴"
-        print(f" * Pool de Liquidez {liq_type} en nivel {row['Level']} (Vela #{idx})")
-        
-    print("\n[Order Blocks Activos LTF 2m]")
-    for idx, row in active_obs.iterrows():
-        type_str = "Demand (🟢)" if row["OB"] == 1 else "Supply (🔴)"
-        print(f" * OB {type_str} en {row['Bottom']} - {row['Top']} | Vol: {row['OBVolume']}")
-        
-    print("\n[FVGs Activos y Anatomía de Velas]")
-    for fvg in formatted_fvgs:
-        print(f" * FVG {fvg['type']} | Rango: {fvg['bottom']} - {fvg['top']} | Perfil: {fvg['profile']} ({fvg['inversion_prob']})")
-        
-    if len(bprs) > 0:
-        print("\n[Balanced Price Ranges (BPR) Detectados]")
-        for bpr in bprs[-3:]:
-            print(f" * BPR Solapado en rango: {bpr['bottom']} - {bpr['top']} (FVG #{bpr['bull_index']} & #{bpr['bear_index']})")
+        def run_ml_predict(inst, bias_val, has_bpr, has_fvg, has_ob):
+            confs = ["kz"]
+            if has_bpr: confs.append("bpr")
+            if has_fvg: confs.append("fvg")
+            if has_ob: confs.append("ob")
+            if smt_result and "DETECTADO" in smt_result: confs.append("smt")
+            if bias_val != "Neutral": confs.append("bias")
+            confs_str = ",".join(confs)
+            direction = "Long" if "Bullish" in bias_val else "Short" if "Bearish" in bias_val else "Long"
+            try:
+                res = subprocess.run(
+                    [sys.executable, ml_classifier_path, "--predict", "--inst", inst, "--dir", direction, "--sess", "NY AM KZ", "--confs", confs_str],
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace"
+                )
+                if res.returncode == 0:
+                    return res.stdout.strip()
+            except Exception:
+                pass
+            return ""
             
-    # Mostrar Guardia de Riesgo si hay datos del diario
-    if psych_data:
-        print("\n=========================================================")
-        print("🛡️ ALERTA DEL GUARDIA DE RIESGO INSTITUCIONAL (IA MENTOR)")
-        print("=========================================================")
-        print(f"Hola, copiloto. Analicé tus {psych_data['total_sessions']} bitácoras. Tu balance neto acumulado es de: ${psych_data['total_pnl']:.2f} USD.")
-        if len(psych_data["warnings"]) > 0:
-            print("\n🚨 TUS ERRORES PSICOLÓGICOS MÁS RECURRENTES A EVITAR:")
-            for warn in psych_data["warnings"][:2]:
-                print(f" * {warn['error']}: presente en el {warn['percentage']}% de tus sesiones previas. ¡No caigas hoy en esto!")
-        if len(psych_data["recent_lessons"]) > 0:
-            print("\n📝 LECCIONES CLAVE DE TUS ÚLTIMAS SESIONES PARA REPASAR:")
-            for les in psych_data["recent_lessons"][-3:]:
-                print(f" * {les}")
-        print("=========================================================")
-        
-    if ml_result:
-        print("\n" + ml_result)
+        ml_result_mnq = run_ml_predict("NQ", mnq_analysis["1H"]["bias"], len(mnq_analysis["2m"]["fvgs"]) > 0, len(mnq_analysis["2m"]["fvgs"]) > 0, len(mnq_analysis["2m"]["obs"]) > 0)
+        ml_result_mes = run_ml_predict("ES", mes_analysis["1H"]["bias"], len(mes_analysis["2m"]["fvgs"]) > 0, len(mes_analysis["2m"]["fvgs"]) > 0, len(mes_analysis["2m"]["obs"]) > 0)
 
-    # 11. Generar Visualización con Matplotlib
-    fig, ax = plt.subplots(figsize=(15, 8))
+    # 10. Graficar en subplots: Izquierda MNQ, Derecha MES (Estética Premium)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))
     plt.style.use('dark_background')
     fig.patch.set_facecolor('#0f172a')
-    ax.set_facecolor('#0f172a')
     
-    # Velas
-    for i in range(len(df)):
-        open_p = df["open"].iloc[i]
-        high_p = df["high"].iloc[i]
-        low_p = df["low"].iloc[i]
-        close_p = df["close"].iloc[i]
-        
-        color = '#22c55e' if close_p >= open_p else '#ef4444'
-        ax.vlines(i, low_p, high_p, color=color, linewidth=1.2)
-        rect = patches.Rectangle(
-            (i - 0.35, min(open_p, close_p)),
-            0.7,
-            abs(close_p - open_p),
-            facecolor=color,
-            edgecolor=color,
-            alpha=0.9
-        )
-        ax.add_patch(rect)
-        
-    # OBs
-    for _, row in active_obs.iterrows():
-        ob_start = int(row.name)
-        ob_end = len(df) - 1
-        ob_color = '#10b981' if row["OB"] == 1 else '#f43f5e'
-        ob_label = 'OB Demanda Activo' if row["OB"] == 1 else 'OB Oferta Activo'
-        
-        rect = patches.Rectangle(
-            (ob_start, row["Bottom"]),
-            ob_end - ob_start,
-            row["Top"] - row["Bottom"],
-            facecolor=ob_color,
-            edgecolor=ob_color,
-            alpha=0.15,
-            linestyle='--',
-            linewidth=0.8,
-            label=ob_label
-        )
-        ax.add_patch(rect)
-        ax.hlines(row["Top"], ob_start, ob_end, colors=ob_color, linestyles='dashed', linewidth=0.5)
-        ax.hlines(row["Bottom"], ob_start, ob_end, colors=ob_color, linestyles='dashed', linewidth=0.5)
-        
-    # FVGs
-    for fvg in formatted_fvgs:
-        fvg_color = '#06b6d4' if fvg["type"] == "Bullish" else '#eab308'
-        rect = patches.Rectangle(
-            (fvg["index"], fvg["bottom"]),
-            len(df) - 1 - fvg["index"],
-            fvg["top"] - fvg["bottom"],
-            facecolor=fvg_color,
-            edgecolor=fvg_color,
-            alpha=0.08,
-            linestyle=':',
-            linewidth=0.5
-        )
-        ax.add_patch(rect)
-        
-    # BPRs
-    for bpr in bprs:
-        rect = patches.Rectangle(
-            (min(bpr["bull_index"], bpr["bear_index"]), bpr["bottom"]),
-            len(df) - 1 - min(bpr["bull_index"], bpr["bear_index"]),
-            bpr["top"] - bpr["bottom"],
-            facecolor='#a855f7',
-            edgecolor='#a855f7',
-            alpha=0.12,
-            hatch='//',
-            linewidth=0.6,
-            label='BPR (Balanced Price Range)'
-        )
-        ax.add_patch(rect)
+    def plot_market(ax, df_mkt, active_obs, active_fvgs, swings, title_name):
+        ax.set_facecolor('#0f172a')
+        # Graficar velas
+        for i in range(len(df_mkt)):
+            open_p = df_mkt["open"].iloc[i]
+            high_p = df_mkt["high"].iloc[i]
+            low_p = df_mkt["low"].iloc[i]
+            close_p = df_mkt["close"].iloc[i]
+            
+            color = '#22c55e' if close_p >= open_p else '#ef4444'
+            ax.vlines(i, low_p, high_p, color=color, linewidth=1.2)
+            rect = patches.Rectangle(
+                (i - 0.35, min(open_p, close_p)),
+                0.7,
+                abs(close_p - open_p),
+                facecolor=color,
+                edgecolor=color,
+                alpha=0.9
+            )
+            ax.add_patch(rect)
+            
+        # OBs
+        for _, row in active_obs.iterrows():
+            ob_start = int(row.name)
+            ob_end = len(df_mkt) - 1
+            ob_color = '#10b981' if row["OB"] == 1 else '#f43f5e'
+            rect = patches.Rectangle(
+                (ob_start, row["Bottom"]),
+                ob_end - ob_start,
+                row["Top"] - row["Bottom"],
+                facecolor=ob_color,
+                edgecolor=ob_color,
+                alpha=0.12,
+                linestyle='--',
+                linewidth=0.8
+            )
+            ax.add_patch(rect)
+            ax.hlines(row["Top"], ob_start, ob_end, colors=ob_color, linestyles='dashed', linewidth=0.5)
+            ax.hlines(row["Bottom"], ob_start, ob_end, colors=ob_color, linestyles='dashed', linewidth=0.5)
+            
+        # FVGs
+        for idx, row in active_fvgs.iterrows():
+            fvg_color = '#06b6d4' if row["FVG"] == 1 else '#eab308'
+            rect = patches.Rectangle(
+                (idx, row["Bottom"]),
+                len(df_mkt) - 1 - idx,
+                row["Top"] - row["Bottom"],
+                facecolor=fvg_color,
+                edgecolor=fvg_color,
+                alpha=0.08,
+                linestyle=':',
+                linewidth=0.5
+            )
+            ax.add_patch(rect)
+            
+        # Estilos generales
+        ax.set_title(title_name, fontsize=14, color='#f8fafc', pad=10)
+        ax.set_xlabel("Velas Recientes", color='#94a3b8')
+        ax.set_ylabel("Precio", color='#94a3b8')
+        ax.tick_params(colors='#94a3b8', labelsize=8)
+        ax.grid(True, color='#334155', alpha=0.3, linestyle=':')
+        for spine in ax.spines.values():
+            spine.set_color('#1e293b')
 
-    # BOS y CHoCH
-    for idx, row in recent_bos.iterrows():
-        struct_color = '#38bdf8' if (row["BOS"] == 1 or row["CHOCH"] == 1) else '#f472b6'
-        label_text = "BOS" if not pd.isna(row["BOS"]) else "CHoCH"
-        direction = "▲" if (row["BOS"] == 1 or row["CHOCH"] == 1) else "▼"
-        ax.hlines(row["Level"], idx, len(df)-1, colors=struct_color, linestyles='-.', linewidth=0.8)
-        ax.text(idx, row["Level"], f" {label_text} {direction}", color=struct_color, fontsize=8, fontweight='bold', va='bottom')
-        
-    # Liquidez Externa
-    if last_swing_high is not None:
-        ax.hlines(last_swing_high['Level'], last_swing_high.name, len(df)-1, colors='#fb7185', linestyles='solid', linewidth=1.0)
-        ax.text(last_swing_high.name, last_swing_high['Level'], " Liquidez Externa (High)", color='#fb7185', fontsize=8, fontweight='bold', va='bottom')
-    if last_swing_low is not None:
-        ax.hlines(last_swing_low['Level'], last_swing_low.name, len(df)-1, colors='#fb7185', linestyles='solid', linewidth=1.0)
-        ax.text(last_swing_low.name, last_swing_low['Level'], " Liquidez Externa (Low)", color='#fb7185', fontsize=8, fontweight='bold', va='top')
+    # Graficar MNQ
+    df_mnq_2m = mnq_analysis["df_2m"]
+    swings_nq = smc.swing_highs_lows(df_mnq_2m, swing_length=5)
+    obs_nq = smc.ob(df_mnq_2m, swings_nq)
+    fvgs_nq = smc.fvg(df_mnq_2m)
+    active_obs_nq = obs_nq[obs_nq["OB"].notna() & (obs_nq["OB"] != 0) & ((obs_nq["MitigatedIndex"] == 0) | obs_nq["MitigatedIndex"].isna())]
+    active_fvgs_nq = fvgs_nq[fvgs_nq["FVG"].notna() & (fvgs_nq["FVG"] != 0) & ((fvgs_nq["MitigatedIndex"] == 0) | fvgs_nq["MitigatedIndex"].isna())]
+    plot_market(ax1, df_mnq_2m, active_obs_nq, active_fvgs_nq, swings_nq, f"Nasdaq (MNQ) 2m - Price: {mnq_analysis['last_price']:.2f}")
 
-    # Estilos
-    ax.set_title(f"Escáner de Confluencias Pre-Trade - {symbol} ({resolution}m)", fontsize=16, color='#f8fafc', pad=15)
-    ax.set_xlabel("Velas Recientes", color='#94a3b8')
-    ax.set_ylabel("Precio", color='#94a3b8')
-    ax.tick_params(colors='#94a3b8', labelsize=10)
-    ax.grid(True, color='#334155', alpha=0.3, linestyle=':')
-    
-    for spine in ax.spines.values():
-        spine.set_color('#1e293b')
-        
-    handles, labels = ax.get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    if by_label:
-        ax.legend(by_label.values(), by_label.keys(), loc='upper left', facecolor='#1e293b', edgecolor='#334155')
+    # Graficar MES
+    df_mes_2m = mes_analysis["df_2m"]
+    swings_es = smc.swing_highs_lows(df_mes_2m, swing_length=5)
+    obs_es = smc.ob(df_mes_2m, swings_es)
+    fvgs_es = smc.fvg(df_mes_2m)
+    active_obs_es = obs_es[obs_es["OB"].notna() & (obs_es["OB"] != 0) & ((obs_es["MitigatedIndex"] == 0) | obs_es["MitigatedIndex"].isna())]
+    active_fvgs_es = fvgs_es[fvgs_es["FVG"].notna() & (fvgs_es["FVG"] != 0) & ((fvgs_es["MitigatedIndex"] == 0) | fvgs_es["MitigatedIndex"].isna())]
+    plot_market(ax2, df_mes_2m, active_obs_es, active_fvgs_es, swings_es, f"S&P 500 (MES) 2m - Price: {mes_analysis['last_price']:.2f}")
 
-    # 12. Guardar reportes de forma dinámica y portátil (Neural Network Layout)
-    from datetime import datetime
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    
+    # Guardar gráficos en sus rutas
+    today_str = time.strftime("%Y-%m-%d")
     journal_dir = os.path.dirname(script_dir)
     bitacoras_dir = os.path.join(journal_dir, "bitacoras")
     imagenes_dir = os.path.join(journal_dir, "imagenes")
-    
     os.makedirs(bitacoras_dir, exist_ok=True)
     os.makedirs(imagenes_dir, exist_ok=True)
     
-    symbol_clean = "MNQ"
-    if "ES" in symbol.upper():
-        symbol_clean = "MES"
-    elif "GC" in symbol.upper():
-        symbol_clean = "GC"
-    elif "CL" in symbol.upper():
-        symbol_clean = "CL"
-
-    workspace_img_path = os.path.join(imagenes_dir, f"{today_str}_pre_trade_{symbol_clean}.png")
-    workspace_report_path = os.path.join(bitacoras_dir, f"{today_str}_pre_trade_{symbol_clean}.md")
+    workspace_img_path = os.path.join(imagenes_dir, f"{today_str}_pre_trade_dual.png")
     
-    # Rutas del directorio de artefactos activo de Gemini (espejo)
-    artifact_dir = r"C:\Users\rsama\.gemini\antigravity-cli\brain\b648ecba-8292-44e4-b98d-350aa3c05f31"
-    os.makedirs(artifact_dir, exist_ok=True)
+    # Ruta del artefacto actual de Gemini
+    artifact_dir = r"C:\Users\rsama\AppData\Local\Temp" # Fallback temporal
+    # Buscamos el workspace actual de Gemini por la ruta del prompt
+    gemini_workspace = r"C:\Users\rsama\.gemini\antigravity-cli\brain\02cb9977-937b-410d-8eb5-107b2e6261c9"
+    if os.path.exists(gemini_workspace):
+        artifact_dir = gemini_workspace
+        
     gemini_img_path = os.path.join(artifact_dir, "smc_analysis.png")
     gemini_report_path = os.path.join(artifact_dir, "smc_analysis_report.md")
     
-    # Guardar gráficos
     plt.tight_layout()
     plt.savefig(workspace_img_path, dpi=150, facecolor='#0f172a')
     plt.savefig(gemini_img_path, dpi=150, facecolor='#0f172a')
     plt.close()
-    
-    # Escribir contenido markdown
-    def write_report_content(f, img_link_src):
-        f.write(f"""# 🛠️ Reporte Pre-Trade: Mapa de Confluencias (SMC & ICT)
-        
-Este reporte ha sido generado según los lineamientos de tu **Manual Operativo de Trading**. Analiza las confluencias de temporalidad menor para preparar tu Killzone y delinear tus puntos de interés antes de operar.
+
+    # 11. Generar e invocar el reporte Markdown
+    def self_generate_vwap_guidance(bias_local, mnq_score, mes_score, orderflow_data):
+        is_trend_day = False
+        if orderflow_data:
+            for item in orderflow_data:
+                for ind_name, val in item["indicators"].items():
+                    if "cumulative delta" in ind_name.lower() and val is not None:
+                        try:
+                            if abs(float(val)) > 3000:
+                                is_trend_day = True
+                        except:
+                            pass
+        if "bullish" in bias_local.lower() or "bearish" in bias_local.lower():
+            if abs(mnq_score) > 5 or abs(mes_score) > 5:
+                is_trend_day = True
+
+        if is_trend_day:
+            return """* **Estado de Mercado Esperado:** **Día de Tendencia (Expansión) 🚀**
+* **Guía Operativa del VWAP:**
+  * **El Premium/Discount de altas temporalidades deja de importar y la media del VWAP también.**
+  * Concéntrate más en las **Bandas de Desviación Estándar 2 y 3**, ya que el precio tenderá a caminar y sostenerse sobre ellas a favor de la tendencia.
+  * **⚠️ ADVERTENCIA:** Está estrictamente prohibido usar las bandas externas de +2 o +3 desviaciones para buscar contratendencias (cortos si sube, largos si cae); el precio tenderá a "caminar" sobre ellas."""
+        else:
+            return """* **Estado de Mercado Esperado:** **Día de Rango (Consolidación) 🔄**
+* **Guía Operativa del VWAP:**
+  * El precio tenderá a regresar constantemente a la línea media (VWAP central).
+  * Busca compras únicamente en la **Banda Inferior de -2 Desviaciones** y ventas en la **Banda Superior de +2 Desviaciones** cuando confluyan con barridas de liquidez de micro-temporalidad.
+  * Evita buscar continuaciones largas. Mantén objetivos cortos y toma ganancias al regresar a la línea del VWAP."""
+
+    def generate_md_report(f, img_path, orderflow_data):
+        tfs = ["4H", "1H", "30m", "15m", "5m", "4m", "3m", "2m", "1m"]
+        f.write(f"""# 🛠️ Reporte Pre-Trade Avanzado: Mapa Dual de Confluencias (MNQ & MES)
+
+Este reporte evalúa la estructura de mercado y dibuja la confluencia entre tus marcas de TradingView recopiladas vía CDP a lo largo de las 9 temporalidades analizadas en Nasdaq (`MNQ`) y S&P 500 (`MES`).
 
 ---
 
 ## 📅 Información de la Sesión
 * **Fecha:** `{today_str}`
-* **Activo:** `{symbol}`
-* **Temporalidad:** `{resolution}m` (LTF / Gatillo)
-* **Precio Actual:** `{last_price}`
+* **Mercados Analizados:** Nasdaq (MNQ) y S&P 500 (MES)
+* **Precios de Referencia:** MNQ: `{mnq_analysis['last_price']:.2f}` | MES: `{mes_analysis['last_price']:.2f}`
 * **Vinculación Temporal:** 
   * 🔗 [Ver Autopsia y Bitácora Post-Trade de esta Sesión]({today_str}_session.md) (Se generará al finalizar tu sesión)
 
+---
+
+## ⚖️ Análisis de Bias y Fuerza Relativa
+* **Bias Local Dominante:** `{bias_local}`
+* **Mercado Más Alcista (Fuerte):** `{most_bullish}`
+* **Mercado Más Bajista (Débil):** `{most_bearish}`
+* **Puntuación de Fuerza ESTRUCTURAL:** NQ Score: `{mnq_score}` | ES Score: `{mes_score}`
+
+---
+
+## 🌊 Confluencias de Order Flow (NinjaTrader 8)
+""")
+        if not orderflow_data:
+            f.write("* ⚠️ **Servidor de NinjaTrader inactivo o sin gráficos abiertos.** Asegúrate de abrir NinjaTrader 8 con tu gráfico e indicadores de Order Flow activos para enriquecer este reporte.*\n")
+        else:
+            for item in orderflow_data:
+                f.write(f"### 📊 Gráfico Activo: `{item['symbol']}` ({item['timeframe']})\n")
+                if not item["indicators"]:
+                    f.write("  * *No se detectaron indicadores de Order Flow (Cumulative Delta, Volumen, etc.) en este gráfico.*\n")
+                else:
+                    for ind_name, val in item["indicators"].items():
+                        val_str = f"`{val}`" if val is not None else "`null`"
+                        bias_note = ""
+                        if "cumulative delta" in ind_name.lower():
+                            if val is not None and val != "No disponible":
+                                try:
+                                    val_num = float(val)
+                                    if val_num > 0:
+                                        bias_note = " ➔ **Presión Compradora a Mercado (Alcista) 🟢**"
+                                    elif val_num < 0:
+                                        bias_note = " ➔ **Presión Vendedora a Mercado (Bajista) 🔴**"
+                                except Exception:
+                                    pass
+                        f.write(f"  * **{ind_name}**: {val_str}{bias_note}\n")
+                        
+        f.write(f"""
+---
+
+## 📈 Tabla Comparativa de Estructura (Multi-Temporalidad)
+
+| Temporalidad | Sesgo MNQ | Rango MNQ | Sesgo MES | Rango MES |
+| :--- | :--- | :--- | :--- | :--- |
+""")
+        for tf in tfs:
+            mnq_tf = mnq_analysis[tf]
+            mes_tf = mes_analysis[tf]
+            f.write(f"| **{tf}** | {mnq_tf.get('bias', 'Neutral')} | {mnq_tf.get('range_state', 'Desconocido')} | {mes_tf.get('bias', 'Neutral')} | {mes_tf.get('range_state', 'Desconocido')} |\n")
+
+        f.write(f"""
 ---
 
 ## 🛡️ Alerta del Guardia de Riesgo (IA Risk Mentor)
@@ -782,206 +820,116 @@ Este reporte ha sido generado según los lineamientos de tu **Manual Operativo d
             for les in psych_data["recent_lessons"][-3:]:
                 f.write(f"> * {les}\n")
         else:
-            f.write("> [!NOTE]\n> Aún no se han detectado perfiles psicológicos previos. Asegúrate de registrar tus autopsias de sesión diarias en la carpeta `bitacoras/` para activar la retroalimentación de riesgo.\n")
-
-        if ml_result:
-            f.write(f"""
----
-
-## 🧠 Predicción de Machine Learning (SMC Setup Classifier)
-El clasificador de Inteligencia Artificial analizó la confluencia de este escenario de pre-sesión con tus datos históricos de trade:
-
-```text
-{ml_result}
-```
-""")
-
-        f.write("""
----
-
-## 🎨 Marcaciones Manuales en tu Gráfico (TradingView)
-Esta sección extrae automáticamente tus rectángulos (cajas de zonas) y líneas dibujadas a mano en TradingView y comprueba su confluencia con las zonas de liquidez y estructuras de Smart Money Concepts:
-
-""")
-        if len(drawings_confluences) == 0:
-            f.write("  * *No se detectaron marcaciones manuales activas en el gráfico (cajas grises o líneas de tendencia).* Asegúrate de marcar tus zonas en TradingView para integrarlas en el escáner.\n")
-        else:
-            for conf in drawings_confluences:
-                f.write(f"{conf}\n")
-
-        f.write("""
----
-
-## ⏳ Análisis Estructural Multi-Temporalidad Completo (9 Timeframes)
-Escaneo automático y en segundo plano de estructura de mercado y zonas institucionales activas en todos los marcos de tiempo analizados (de mayor a menor):
-
-| Temporalidad | Sesgo Estructural | Rango (Premium/Discount) | Últimos OBs Activos | Últimos FVGs Activos |
-| :--- | :--- | :--- | :--- | :--- |
-""")
-        for tf in ["4H", "1H", "30m", "15m", "5m", "4m", "3m", "2m", "1m"]:
-            tf_data = all_tf_analysis[tf]
-            bias = tf_data.get("bias", "Neutral")
-            range_state = tf_data.get("range_state", "Desconocido")
-            
-            # Formatear OBs
-            obs_list = []
-            for ob in tf_data.get("obs", []):
-                color = "🟢" if ob["type"] == "Demand" else "🔴"
-                obs_list.append(f"{color} {ob['type']} ({ob['bottom']:.1f}-{ob['top']:.1f})")
-            obs_str = ", ".join(obs_list) if obs_list else "*Ninguno*"
-            
-            # Formatear FVGs
-            fvgs_list = []
-            for fvg in tf_data.get("fvgs", []):
-                color = "🟢" if fvg["type"] == "Bullish" else "🔴"
-                fvgs_list.append(f"{color} {fvg['type']} ({fvg['bottom']:.1f}-{fvg['top']:.1f})")
-            fvgs_str = ", ".join(fvgs_list) if fvgs_list else "*Ninguno*"
-            
-            f.write(f"| **{tf}** | {bias} | {range_state} | {obs_str} | {fvgs_str} |\n")
+            f.write("> [!NOTE]\n> Aún no se han detectado perfiles psicológicos previos. Las autopsias en Obsidian alimentan la retroalimentación de riesgo de manera pasiva.\n")
 
         f.write(f"""
 ---
 
-## 📊 Mapa de Gráfico de Confluencias
-Este gráfico mapea de forma precisa la liquidez externa, los bloques de orden activos, los vacíos de liquidez y los rangos de precio balanceados (BPR):
+## 🎯 Plan Operativo de Sesión (Gatillos Estructurales)
 
-![Gráfico Pre-Trade]({img_link_src})
+### 🟢 Escenario para LONG (Compras)
+{long_triggers}
+
+### 🔴 Escenario para SHORT (Ventas)
+{short_triggers}
 
 ---
 
-## 🔍 Análisis Estructural Top-Down (Multi-Temporalidad)
-Análisis de temporalidades HTF de Nasdaq en el fondo sin alterar tu TradingView Desktop:
+## 🚫 Filtros Negativos (Zonas de Peligro)
 
-* **1H HTF Bias:** `{htf_analysis['1h']['bias']}` | Mapeado según el último BOS estructural en 1 hora.
-* **1H Zonas Clave:**
-""")
-        if len(htf_analysis["1h"]["obs"]) == 0 and len(htf_analysis["1h"]["fvgs"]) == 0:
-            f.write("  * *No se detectan OBs o FVGs de 1H inmitigados cercanos.*\n")
-        else:
-            for ob in htf_analysis["1h"]["obs"][:2]:
-                f.write(f"  * OB de 1H {ob['type']}: Rango `{ob['bottom']:.2f} - {ob['top']:.2f}`\n")
-            for fvg in htf_analysis["1h"]["fvgs"][:2]:
-                f.write(f"  * FVG de 1H {fvg['type']}: Rango `{fvg['bottom']:.2f} - {fvg['top']:.2f}`\n")
+### ⚠️ Mala Idea Tirar LONGS (No Comprar)
+{bad_long}
 
-        f.write(f"""
-* **15m POIs de Confluencia:**
-""")
-        if len(htf_analysis["15m"]["obs"]) == 0 and len(htf_analysis["15m"]["fvgs"]) == 0:
-            f.write("  * *No se detectan OBs o FVGs de 15m inmitigados cercanos.*\n")
-        else:
-            for ob in htf_analysis["15m"]["obs"][:2]:
-                f.write(f"  * OB de 15m {ob['type']}: Rango `{ob['bottom']:.2f} - {ob['top']:.2f}` | Ver [[Order Block (Bullish)]] o [[Order Block (Bearish)]]\n")
-            for fvg in htf_analysis["15m"]["fvgs"][:2]:
-                f.write(f"  * FVG de 15m {fvg['type']}: Rango `{fvg['bottom']:.2f} - {fvg['top']:.2f}` | Ver [[Fair Value Gap]]\n")
+### ⚠️ Mala Idea Tirar SHORTS (No Vender)
+{bad_short}
 
-        f.write(f"""
+---
+
+## 🌀 Estrategia de VWAP y Nivel de Liquidez (DOL)
+{self_generate_vwap_guidance(bias_local, mnq_score, mes_score, orderflow_data)}
+
 ---
 
 ## ⚡ Correlación Inter-Mercado (SMT Divergence)
-* **Estado SMT:** `{smt_result if smt_result else 'S&P 500 (MES) y Nasdaq (MNQ) alineados de forma regular en el Open (Sin divergencias activas). Ver [[SMT Divergence]]'}`
+* **Estado SMT:** `{smt_result if smt_result else 'S&P 500 (MES) y Nasdaq (MNQ) alineados de forma regular en el Open (Sin divergencias activas).'}`
 
 ---
 
-## 🧲 Puntos de Interés (POI) y Liquidez LTF ({resolution}m)
-
-### 🌐 1. Liquidez Externa (HTF / Session Pivots)
-Niveles clave para buscar barridas de liquidez (*sweeps*) en la apertura de sesión o Killzone:
+## 🧠 Predicciones de Machine Learning (Win Rate Classifier)
 """)
-        if last_swing_high is not None:
-            f.write(f"* **Liquidez Externa Superior (Swing High):** `{last_swing_high['Level']}` (Vela #{last_swing_high.name}) | Ver [[External Liquidity]] y [[Swing High]]\n")
-        if last_swing_low is not None:
-            f.write(f"* **Liquidez Externa Inferior (Swing Low):** `{last_swing_low['Level']}` (Vela #{last_swing_low.name}) | Ver [[External Liquidity]] y [[Swing Low]]\n")
-            
-        f.write("\n* **Pools de Liquidez Interna Activos (Unswept):**\n")
-        if len(active_liquidity) == 0:
-            f.write("  * *No se detectan pools de liquidez interna inmitigados en el rango de precios actual. Ver [[Internal Liquidity]]*\n")
-        else:
-            for idx, row in active_liquidity.iterrows():
-                liq_dir = "Alcista (Highs) 🟢" if row["Liquidity"] == 1 else "Bajista (Lows) 🔴"
-                f.write(f"  * Pool {liq_dir} en nivel `{row['Level']:.2f}` en la vela #{idx} | Ver [[Liquidity Sweep]]\n")
-            
-        f.write("""
-### 🟢 2. Bloques de Orden de Demanda (Soportes / Compras)
-Zonas institucionales activas de alta concentración de compras limitadas. Ver [[Order Block (Bullish)]].
-
-| Tipo | Rango de Precio | Volumen | Estado |
-| :--- | :--- | :--- | :--- |
-""")
-        for idx, row in active_obs[active_obs["OB"] == 1].iterrows():
-            f.write(f"| **Demand OB** | `{row['Bottom']} - {row['Top']}` | `{row['OBVolume']}` | **Inmitigado (Activo)** 🔥 |\n")
-            
-        f.write("""
-### 🔴 3. Bloques de Orden de Oferta (Resistencias / Ventas)
-Zonas institucionales activas de alta concentración de ventas limitadas. Ver [[Order Block (Bearish)]].
-
-| Tipo | Rango de Precio | Volumen | Estado |
-| :--- | :--- | :--- | :--- |
-""")
-        for idx, row in active_obs[active_obs["OB"] == -1].iterrows():
-            f.write(f"| **Supply OB** | `{row['Bottom']} - {row['Top']}` | `{row['OBVolume']}` | **Inmitigado (Activo)** ⚡ |\n")
-
-        f.write("""
----
-
-## 🌀 4. Anatomía de Fair Value Gaps (FVG) e Inversiones
-Análisis detallado de imbalances de precios y su **probabilidad de inversión (iFVG)** según la secuencia de sus 3 velas. Ver [[Fair Value Gap]] e [[IFVG]].
-
-| Dirección | Rango de FVG | Perfil de Velas | Probabilidad de Inversión / Comportamiento |
-| :--- | :--- | :--- | :--- |
-""")
-        for fvg in formatted_fvgs:
-            fvg_dir = "🟢 Bullish FVG" if fvg["type"] == "Bullish" else "🔴 Bearish FVG"
-            fvg_range = f"{fvg['bottom']} - {fvg['top']}"
-            fvg_profile = fvg['profile']
-            fvg_prob = fvg['inversion_prob']
-            fvg_idx = fvg['index']
-            f.write(f"| {fvg_dir} | `{fvg_range}` | `{fvg_profile}` (Vela #{fvg_idx}) | {fvg_prob} |\n")
-
-        f.write("""
----
-
-## 🟣 5. Balanced Price Ranges (BPR) Detectados
-Solapamientos de FVG alcistas y bajistas en el mismo nivel de precios. Actúan como soportes/resistencias magnéticos de altísima precisión. Ver [[Balanced Price Range]].
-""")
-        if len(bprs) == 0:
-            f.write("* *No se detectan Balanced Price Ranges (BPR) solapados en las velas analizadas.*\n")
-        else:
-            for bpr in bprs:
-                f.write(f"* **BPR Detectado:** Rango `{bpr['bottom']:.2f} - {bpr['top']:.2f}` | Solapamiento de FVG Alcista (Vela #{bpr['bull_index']}) y Bajista (Vela #{bpr['bear_index']})\n")
-
-        f.write("""
----
-
-## 🔄 6. Estructura de Mercado Reciente (BOS / CHoCH)
-Rupturas de estructura registradas en el gráfico. Ver [[Market Structure]], [[Break of Structure]] y [[Change of Character]]:
-""")
-        for idx, row in recent_bos.iterrows():
-            struct_name = "BOS (Break of Structure)" if not pd.isna(row["BOS"]) else "CHoCH (Change of Character)"
-            direction = "Alcista 🟢" if (row["BOS"] == 1 or row["CHOCH"] == 1) else "Bajista 🔴"
-            f.write(f"* **{struct_name} {direction}** en nivel `{row['Level']}` | Confirmado en la vela #{idx}\n")
+        if ml_result_mnq:
+            f.write(f"### 💻 Predicción Nasdaq (MNQ):\n```text\n{ml_result_mnq}\n```\n")
+        if ml_result_mes:
+            f.write(f"### 📊 Predicción S&P 500 (MES):\n```text\n{ml_result_mes}\n```\n")
 
         f.write(f"""
 ---
 
-## 💡 Protocolo Operativo Pre-Trade (Tu Plan de Sesión)
+## 🎨 Comparación con Marcaciones Manuales (TradingView CDP)
 
-> [!IMPORTANT]
-> **Checklist antes de apretar el gatillo (LTF 1m - 5m):**
-> 1. **Fase 1 (Sweep):** Espera a que el precio barra una de las zonas de **Liquidez Externa** (`{last_swing_high['Level'] if last_swing_high is not None else 'High'}` / `{last_swing_low['Level'] if last_swing_low is not None else 'Low'}`) o mitigue un POI HTF.
-> 2. **Fase 2 (iFVG Trigger):** Busca una reacción post-sweep. El cuerpo de la vela debe cerrar y romper un FVG contrario, prioritariamente con perfil **Easy to Invert (R-G-R o G-R-G)**, convirtiéndolo en un **iFVG**.
-> 3. **Gestión de Riesgo:** Si opera en All-Time Highs, gestión estricta con relación de **1:1 R:R**. En días de noticias, no ingresar a operaciones dentro de los **5 minutos anteriores** a la publicación.
+### 💻 Marcaciones en Nasdaq (MNQ) por Temporalidad:
+""")
+        if len(mnq_confluences) == 0:
+            f.write("  * *No se detectaron marcaciones manuales en Nasdaq.* Asegúrate de graficar en TradingView.\n")
+        else:
+            for conf in mnq_confluences:
+                f.write(f"{conf}\n")
+
+        f.write(f"""
+### 📊 Marcaciones en S&P 500 (MES) por Temporalidad:
+""")
+        if len(mes_confluences) == 0:
+            f.write("  * *No se detectaron marcaciones manuales en S&P 500.* Asegúrate de graficar en TradingView.\n")
+        else:
+            for conf in mes_confluences:
+                f.write(f"{conf}\n")
+
+        f.write(f"""
+---
+
+## 🖼️ Mapa Visual de Estructuras (2m)
+
+![Gráfico Dual de Confluencias]({img_path})
 """)
 
-    # Guardar en local del usuario (relativo)
+    # Escribir reporte en Obsidian
+    workspace_report_path = os.path.join(bitacoras_dir, f"{today_str}_pre_trade.md")
     with open(workspace_report_path, "w", encoding="utf-8") as f:
-        write_report_content(f, f"../imagenes/{today_str}_pre_trade_{symbol_clean}.png")
+        generate_md_report(f, f"../imagenes/{today_str}_pre_trade_dual.png", orderflow_data)
 
-    # Guardar en Gemini (absoluto)
+    # Escribir reporte espejo en Gemini
     with open(gemini_report_path, "w", encoding="utf-8") as f:
-        write_report_content(f, f"file:///C:/Users/rsama/.gemini/antigravity-cli/brain/b648ecba-8292-44e4-b98d-350aa3c05f31/smc_analysis.png")
+        generate_md_report(f, f"file:///{gemini_img_path.replace(chr(92), '/')}", orderflow_data)
 
-    print(f"¡Reporte Pre-Trade guardado con éxito en tu bitácora: {workspace_report_path}!")
-    print(f"¡Reporte Espejo Gemini actualizado en: {gemini_report_path}!")
+    print(f"\n=========================================================")
+    print("=== REPORTE DE BIAS Y ESTRATEGIA PRE-TRADE DUAL ===")
+    print("=========================================================")
+    print(f"Bias Local: {bias_local}")
+    print(f"Mercado fuerte (Bullish): {most_bullish}")
+    print(f"Mercado débil (Bearish): {most_bearish}")
+    if smt_result:
+        print(f"Alerta Divergencia SMT: {smt_result}")
+    else:
+        print("Sincronía SMT: S&P 500 y Nasdaq alineados.")
+        
+    if orderflow_data:
+        print("\n--- CONFLUENCIAS DE ORDER FLOW (NinjaTrader 8) ---")
+        for item in orderflow_data:
+            print(f"Gráfico: {item['symbol']} ({item['timeframe']})")
+            for ind, val in item["indicators"].items():
+                print(f"  * {ind}: {val}")
+        
+    print("\n--- GATILLO LONG ---")
+    print(long_triggers)
+    print("\n--- GATILLO SHORT ---")
+    print(short_triggers)
+    print("\n--- MALA IDEA LONG ---")
+    print(bad_long)
+    print("\n--- MALA IDEA SHORT ---")
+    print(bad_short)
+    print("=========================================================")
+    print(f"Reporte de sesión guardado con éxito en: {workspace_report_path}")
+    print(f"Reporte espejo Gemini actualizado en: {gemini_report_path}")
 
 if __name__ == "__main__":
     main()
