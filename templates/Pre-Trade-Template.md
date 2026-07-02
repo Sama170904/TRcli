@@ -18,3 +18,11 @@ created: <% tp.file.creation_date("YYYY-MM-DD HH:mm") %>
 
 ## ⚖️ PLAN DE ACCIÓN Y NARRATIVA ESPERADA
 - 
+
+## 🛡️ CHECKLIST PRE-TRADE DE DISCIPLINA (Para mitigar mala memoria)
+- [ ] ¿He revisado la **Tarjeta de Memoria** de la sesión anterior?
+- [ ] ¿Identifiqué mis dos errores psicológicos más comunes de hoy (ej. Ignorar Resistencia / FOMO) y sé cómo evitarlos?
+- [ ] ¿Tengo claras las resistencias/soporte magnéticos (muros limit de Bookmap) y el DOL?
+- [ ] ¿Revisé las noticias de impacto para el filtro de 5 minutos?
+- [ ] ¿Acepto que prefiero perder un trade a romper una regla?
+

@@ -629,6 +629,7 @@ def main():
             ob_start = int(row.name)
             ob_end = len(df_mkt) - 1
             ob_color = '#10b981' if row["OB"] == 1 else '#f43f5e'
+            ob_text = "Bull OB" if row["OB"] == 1 else "Bear OB"
             rect = patches.Rectangle(
                 (ob_start, row["Bottom"]),
                 ob_end - ob_start,
@@ -642,10 +643,13 @@ def main():
             ax.add_patch(rect)
             ax.hlines(row["Top"], ob_start, ob_end, colors=ob_color, linestyles='dashed', linewidth=0.5)
             ax.hlines(row["Bottom"], ob_start, ob_end, colors=ob_color, linestyles='dashed', linewidth=0.5)
+            # Add text label for OB
+            ax.text(ob_start + 1, (row["Top"] + row["Bottom"])/2, ob_text, color=ob_color, fontsize=7, fontweight='bold', alpha=0.8, va='center')
             
         # FVGs
         for idx, row in active_fvgs.iterrows():
             fvg_color = '#06b6d4' if row["FVG"] == 1 else '#eab308'
+            fvg_text = "Bull FVG" if row["FVG"] == 1 else "Bear FVG"
             rect = patches.Rectangle(
                 (idx, row["Bottom"]),
                 len(df_mkt) - 1 - idx,
@@ -657,6 +661,8 @@ def main():
                 linewidth=0.5
             )
             ax.add_patch(rect)
+            # Add text label for FVG
+            ax.text(idx + 1, (row["Top"] + row["Bottom"])/2, fvg_text, color=fvg_color, fontsize=7, fontweight='bold', alpha=0.8, va='center')
             
         # Estilos generales
         ax.set_title(title_name, fontsize=14, color='#f8fafc', pad=10)

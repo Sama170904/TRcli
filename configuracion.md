@@ -115,11 +115,27 @@ flowchart TD
      * A medida que acumules registros en `journal.json`, refinaré tus reglas del manual operativo (Sección 1.5). Si el mercado Nasdaq cambia de comportamiento debido a un cambio macroeconómico, recalcularé las confluencias ganadoras contigo y te propondré adaptaciones científicas en tu plan de riesgo.
   4. **Automatización Pasiva de Obsidian (Dataview + Templater):**
      * Las plantillas en `templates/` estructuran los datos del frontmatter (YAML) de cada sesión generada por mí. Esto alimenta pasivamente tu archivo `Dashboard-Obsidian.md`, el cual actualiza tus estadísticas de cuenta (win rate, balance de la cuenta, P&L total y lista histórica de sesiones) al abrir tu Obsidian, manteniendo tu diario digital siempre sincronizado y sin ningún esfuerzo manual por tu parte.
-   5. **Clasificación Predictiva por Machine Learning (SMC Setup Classifier):**
-      * El motor de Inteligencia Artificial entrena localmente un modelo de clasificación basado en el algoritmo **Random Forest** usando el archivo `journal.json`.
-      * **Mapeo Inteligente de Confluencias:** El script cuenta con un diccionario de alias (`CONFLUENCE_MAPPING`) que normaliza automáticamente confluencias cortas ingresadas en la predicción (ej. `fvg`, `ob`, `smt`, `bpr`) a los términos exactos de la bitácora (`fair value gap (fvg) on entry tf`, `order block (ob) alignment`, etc.) asegurando consistencia de características sin errores.
-      * **Integración en el Escáner Pre-Trade:** Al ejecutar el escáner de pre-sesión (`scripts/analyze_smc.py`), este invoca automáticamente al clasificador ML. Lee la temporalidad, bias macro, y las confluencias SMC calculadas en vivo para realizar una predicción de probabilidad de Win Rate, la cual queda registrada en el reporte Markdown y se muestra en consola.
-      * **Modo Contingencia (Resiliencia):** Si tu TradingView Desktop no está abierto o el puerto CDP está inactivo, el escáner premarket activa automáticamente su modo de contingencia utilizando datos de **Yahoo Finance** (`MNQ=F`, `MES=F`), lo que te permite realizar análisis de confluencias y predicciones del mercado de manera offline.
+  5. **Clasificación Predictiva por Machine Learning (SMC Setup Classifier):**
+     * El motor de Inteligencia Artificial entrena localmente un modelo de clasificación basado en el algoritmo **Random Forest** usando el archivo `journal.json`.
+     * **Mapeo Inteligente de Confluencias:** El script cuenta con un diccionario de alias (`CONFLUENCE_MAPPING`) que normaliza automáticamente confluencias cortas ingresadas en la predicción (ej. `fvg`, `ob`, `smt`, `bpr`) a los términos exactos de la bitácora (`fair value gap (fvg) on entry tf`, `order block (ob) alignment`, etc.) asegurando consistencia de características sin errores.
+     * **Integración en el Escáner Pre-Trade:** Al ejecutar el escáner de pre-sesión (`scripts/analyze_smc.py`), este invoca automáticamente al clasificador ML. Lee la temporalidad, bias macro, y las confluencias SMC calculadas en vivo para realizar una predicción de probabilidad de Win Rate, la cual queda registrada en el reporte Markdown y se muestra en consola.
+     * **Modo Contingencia (Resiliencia):** Si tu TradingView Desktop no está abierto o el puerto CDP está inactivo, el escáner premarket activa automáticamente su modo de contingencia utilizando datos de **Yahoo Finance** (`MNQ=F`, `MES=F`), lo que te permite realizar análisis de confluencias y predicciones del mercado de manera offline.
+
+  ### C. Fundamentos Científicos de las Plantillas y Rutina de Retención
+  Para compensar de forma sistémica los vacíos de memoria a corto plazo y acelerar la curva de aprendizaje conductual (mitigando errores recurrentes como FOMO e Ignorar Resistencia), las plantillas de pre-trade y sesión están estructuradas bajo principios de neurociencia cognitiva y psicología del rendimiento (Dr. Brett Steenbarger & Mark Douglas):
+
+  1. **Plantilla Pre-Trade (La Activación o Priming):**
+     * *Objetivo:* Preparar la mente antes del estrés operativo en vivo.
+     * *Estructura:* Integra un *Checklist de Disciplina Interactivo* en el pre-trade ([Pre-Trade-Template.md](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/templates/Pre-Trade-Template.md)). Obliga a marcar manualmente que se ha revisado la Tarjeta de Memoria de ayer y se reconocen los sesgos del día. Esto pre-activa la red de control inhibitorio en el córtex prefrontal.
+  2. **Plantilla de Sesión (El Post-Trade y Consolidación):**
+     * *Objetivo:* Documentar en caliente y programar el cerebro antes de dormir.
+     * *Estructura:* Implementada en [Session-Template.md](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/templates/Session-Template.md), contiene una autopsia causal completa (¿por qué funcionó/falló?, MAE/MFE) y una *Tarjeta de Memoria de Rápida Consulta* (callout visual). 
+     * *Clasificación Proceso vs. Resultado:* Separa la disciplina técnica del resultado monetario (un trade es "Correcto" o "Incorrecto" según el apego al plan, no por su PnL).
+  3. **Protocolo Diario y Semanal de Estudio (Rutina de Retención):**
+     * *Paso 1: Descarga Cognitiva (Post-sesión inmediata):* Registrar detalles técnicos y psicológicos mientras la memoria de corto plazo está fresca.
+     * *Paso 2: Consolidación (Noche - Antes de dormir):* Leer la Tarjeta de Memoria por 30 segundos. El sueño de ondas lentas y REM consolida este foco en el neocórtex.
+     * *Paso 3: Priming (Mañana):* Leer la tarjeta de ayer y verificar el checklist pre-trade.
+     * *Paso 4: Repetición Espaciada (Semanal):* Revisión del [dashboard.md](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/dashboard.md) e historial de [psych_profile.json](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/scripts/psych_profile.json) los fines de semana para aplanar la curva del olvido.
 
 ---
 

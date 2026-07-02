@@ -44,6 +44,20 @@ result: "BE"
 
 ---
 
-## 🧠 LECCIONES DE LA SESIÓN
-1. 
-2. 
+## 🧠 CENTRO DE APRENDIZAJE Y RETROALIMENTACIÓN (MÉTODO STEENBARGER)
+
+> [!TIP]
+> **TARJETA DE MEMORIA DE RÁPIDA CONSULTA (Revisar antes de abrir el mercado)**
+> - **El Foco de Hoy:** <resumen_accionario_de_1_oracion>
+> - **Acción de Éxito a Repetir (Músculo):** <buen_habito_a_mantener>
+> - **Error Crítico a Evitar (Eliminar):** <error_a_mitigar_y_su_gatillo>
+
+### ⚖️ Clasificación: Proceso vs. Resultado
+*¿Ejecutaste el plan de manera disciplinada, independientemente de ganar o perder dinero?*
+- **Trade #1:** [<Resultado_PnL>] ➔ **Proceso:** [CORRECTO (Buen Trade) / INCORRECTO (Mal Trade)] \| *Razón:* <explicacion_del_proceso>
+- **Trade #2:** [<Resultado_PnL>] ➔ **Proceso:** [CORRECTO (Buen Trade) / INCORRECTO (Mal Trade)] \| *Razón:* <explicacion_del_proceso>
+
+### 📈 Plan de Acción Inmediato para la Próxima Sesión
+- **Qué mantendré:** 
+- **Qué corregiré activamente:** 
+

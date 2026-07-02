@@ -181,7 +181,7 @@ def main():
                 verdicts.append(f"iFVG {fvg_type} en {tf}m (Gatillo de {'Compra' if fvg_type=='Bullish' else 'Venta'})")
             if has_abs:
                 verdicts.append(f"Absorción de volumen en {tf}m")
-                
+
     print("-" * 50)
     if setup_found:
         print("\n👉 VERDICTO DEL MENTOR IA:")
@@ -193,7 +193,29 @@ def main():
         print("\n👉 VERDICTO DEL MENTOR IA:")
         print("  ❌ NO SE DETECTAN GATILLOS CLAROS EN ESTE SEGUNDO.")
         print("  * Espera un desplazamiento que invierta un FVG (iFVG) o una absorción de volumen institucional clara.")
+        
+    # Cargar advertencias psicológicas de la bitácora del usuario (para personas con mala memoria)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    profile_path = os.path.join(script_dir, "psych_profile.json")
+    if os.path.exists(profile_path):
+        try:
+            with open(profile_path, "r", encoding="utf-8") as pf:
+                profile = json.load(pf)
+                warnings = profile.get("warnings", [])
+                recent_lessons = profile.get("recent_lessons", [])
+                if warnings:
+                    print("\n🚨 ADVERTENCIA PSICOLÓGICA ACTIVA DE TU BITÁCORA:")
+                    for w in warnings[:2]:
+                        print(f"  • CUIDADO CON: {w['error']} (Presente en {w['percentage']}% de tus sesiones)")
+                if recent_lessons:
+                    print("\n📝 LECCIÓN DE MEMORIA CLAVE:")
+                    clean_lesson = recent_lessons[-1].split(":")[-1].strip()
+                    print(f"  • {clean_lesson}")
+        except Exception:
+            pass
+            
     print("==================================================")
+
 
 if __name__ == "__main__":
     main()
