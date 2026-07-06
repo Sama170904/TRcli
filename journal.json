@@ -1,5 +1,22 @@
 [
   {
+    "id": "1783095180000",
+    "datetime": "2026-07-06T08:53",
+    "instrument": "ES",
+    "session": "NY AM KZ",
+    "direction": "Short",
+    "entry": "7564.50",
+    "sl": "7570.50",
+    "tp": "7556.25",
+    "exit": "7570.50",
+    "result": "Loss",
+    "rr": "0.00",
+    "confluences": "SMT divergence present; Order Block (OB) alignment; Inverse FVG / inverse structure present",
+    "notes": "Short en MES a 7564.50 tras retest de zona Premium intradía (mitigación de resistencia) y confirmación de iFVG en 1m al cierre de la vela. Se identificó SMT bajista contra Nasdaq a las 08:57 y absorción de delta en NinjaTrader. Stop loss inicial colocado en el swing high por encima de 7573 y ceñido defensivamente detrás del POC de volumen a 7570.50. Salida en SL reducido (-6.00 puntos, -$150.00 USD netos). Errores: Chasing (vender el mínimo de la vela de 1m) e ignorar el Discount HTF (1H/30m en descuento) y la tracción de Nasdaq rompiendo al alza los 30000.",
+    "mae": "24.0",
+    "mfe": "33.0"
+  },
+  {
     "id": "1783008720000",
     "datetime": "2026-07-02T08:32",
     "instrument": "ES",

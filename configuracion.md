@@ -62,7 +62,8 @@ flowchart TD
   ## 4. ENTRY MODEL (THE TRIGGER)
   - Execution Timeframe: Low-timeframe (LTF) between 1m and 5m.
   - Phase 1 (Liquidity Sweep): Price sweeps a POI defined in Section 2 (with or without SMT divergence).
-  - Phase 2 (Confirmation by Displacement): Price must immediately react post-sweep and close with full candle body through an opposing FVG (prioritizing "Easy to Invert" profiles), turning it into an Inverse FVG (IFVG). Entry is executed market upon the IFVG inversion.
+  - Phase 2 (Confirmation by Displacement): Price must immediately react post-sweep and close with full candle body through an opposing FVG (prioritizing "Easy to Invert" profiles), turning it into an Inverse FVG (IFVG). **La entrada se ejecuta únicamente cuando la vela que confirma la inversión CIERRA con cuerpo (para evitar ser atrapado por mechas de barrido/sweeps que no sostienen la inversión).**
+  - **Regla de Gestión de Distancia (Chasing Filter):** Si la vela de confirmación cierra demasiado lejos del origen (creando un desplazamiento muy largo que aleja el precio de entrada del Stop Loss y daña la relación R:R), **está prohibido entrar a mercado al cierre**. En su lugar, se debe colocar una **Orden Límite** más arriba en la zona premium de la vela (retesteo del iFVG o del 50% de la vela de desplazamiento) para asegurar un R:R mínimo de 1:2. Si el precio no regresa a retestear la orden límite y expande directamente, el trade se descarta.
   - Hierarchy Rule: If multiple IFVGs are formed within the same leg, prioritize the higher timeframe (e.g., if a 2m and a 4m IFVG are present, wait for the 4m IFVG inversion). Do NOT look for confirmations on timeframes greater than 5m.
 
   ## 5. INTRADAY FILTER RULES & EXCLUSION CONDITIONS (NO-TRADE ZONES)
