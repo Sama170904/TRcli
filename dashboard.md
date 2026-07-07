@@ -7,25 +7,25 @@ Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias
 
 ## 🏆 ESTATUS DE LA CUENTA FONDEADA (EVAL)
 * **Tipo de Cuenta:** Evaluación (Eval)
-* **Balance Actual:** `$53,848.00 USD` (al 06/07/2026)
+* **Balance Actual:** `$53,508.00 USD` (al 07/07/2026)
 * **Objetivo de Beneficio:** `$53,000.00 USD`
-* **Distancia al Objetivo:** **OBJETIVO SUPERADO POR `+$848.00 USD` 🎉 (Evaluación Aprobada)**
+* **Distancia al Objetivo:** **OBJETIVO SUPERADO POR `+$508.00 USD` 🎉 (Evaluación Aprobada)**
 * **Días Hábiles Restantes:** `0 días`
 
 ---
 
 ## 📈 ESTADÍSTICAS GENERALES DE LA CUENTA
-* **Balance Neto Total (Bitácora):** `+$4,425.00 USD`
-* **Total Sesiones Operadas:** `18`
-* **Sesiones Ganadoras (Win):** `10` (55.6% de efectividad de sesión)
-* **Sesiones en Breakeven (BE):** `1` (5.6% de efectividad de sesión)
-* **Sesiones Perdedoras (Loss):** `5` (27.8% de efectividad de sesión)
-* **Sesiones sin Operar (No Trade):** `2` (11.1% de efectividad de sesión)
-* **Total Trades Ejecutados:** `25`
+* **Balance Neto Total (Bitácora):** `+$4,085.00 USD`
+* **Total Sesiones Operadas:** `19`
+* **Sesiones Ganadoras (Win):** `10` (52.6% de efectividad de sesión)
+* **Sesiones en Breakeven (BE):** `1` (5.3% de efectividad de sesión)
+* **Sesiones Perdedoras (Loss):** `6` (31.6% de efectividad de sesión)
+* **Sesiones sin Operar (No Trade):** `2` (10.5% de efectividad de sesión)
+* **Total Trades Ejecutados:** `26`
   - *Trades Ganadores:* `13` (Trade #2 28/05: Parcial, Trade #3 28/05: TP Completo, Trade #1 02/06: TP Completo, Trade #1 03/06: BE+ de protección, Trade #1 05/06: TP Completo de 115 puntos, Trade #1 08/06: TP Completo de 20 puntos en MES, Trade #1 09/06: TP Completo de 133 puntos en NQ, Trade #1 10/06: TP Completo de 18 puntos en MES, Trade #1 11/06: TP Completo de 102 puntos en NQ, Trade #2 29/06: TP Completo de 124.75 puntos en NQ, Trade #1 01/07: Scalp rápido de 5 ticks, Trade #2 01/07: TP Completo de 65 ticks en MES, Trade #1 02/07: TP Completo de 86 ticks en MES)
   - *Trades en Breakeven (BE):* `3` (Trade #1 28/05: BE, Trade #1 29/05: BE, Trade #1 04/06: BE)
-  - *Trades Perdedores (SL):* `9` (Trade #1 01/06: Salida discrecional anticipada, Trade #2 03/06: SL tocado por retroceso, Trade #2 04/06: SL por entrada anticipada, Trade #1 29/06: SL por operar en descuento, Trade #1 30/06: SL por microestructura 1m, Trade #2 30/06: SL por FOMO contra-momentum, Trade #3 30/06: SL manual en continuación tardía, Trade #4 30/06: SL por sobreloteo en Premium, Trade #1 06/07: SL en MES corto por chasing y arrastre de Nasdaq)
-* **Win Rate de Trades:** `52.0%` (13/25)
+  - *Trades Perdedores (SL):* `10` (Trade #1 01/06: Salida discrecional anticipada, Trade #2 03/06: SL tocado por retroceso, Trade #2 04/06: SL por entrada anticipada, Trade #1 29/06: SL por operar en descuento, Trade #1 30/06: SL por microestructura 1m, Trade #2 30/06: SL por FOMO contra-momentum, Trade #3 30/06: SL manual en continuación tardía, Trade #4 30/06: SL por sobreloteo en Premium, Trade #1 06/07: SL en MES corto por chasing y arrastre de Nasdaq, Trade #1 07/07: SL en MES largo por operar contratendencia en día de expansión bajista)
+* **Win Rate de Trades:** `50.0%` (13/26)
 
 ---
 
@@ -33,6 +33,7 @@ Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias
 
 | Fecha | Día | PnL Neto (USD) | Trades | Resultado | Enlace a Bitácora Diaria |
 | :--- | :---: | :--- | :---: | :---: | :--- |
+| **07/07/2026** | Martes | **-$340.00** | 1 | 🔴 LOSS | [Bitácora 07-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-07_session.md) |
 | **06/07/2026** | Lunes | **-$150.00** | 1 | 🔴 LOSS | [Bitácora 06-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-06_session.md) |
 | **02/07/2026** | Jueves | **+$967.50** | 1 | 🟢 WIN | [Bitácora 02-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-02_session.md) |
 | **01/07/2026** | Miércoles | **+$525.00** | 2 | 🟢 WIN | [Bitácora 01-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-01_session.md) |

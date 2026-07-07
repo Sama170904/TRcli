@@ -213,7 +213,12 @@ def analyze_patterns():
     report_content.append("| Confluencia Técnica | Usos Totales | Wins | Losses | BEs | Win Rate (%) |")
     report_content.append("| :--- | :---: | :---: | :---: | :---: | :---: |")
     
-    sorted_confs = sorted(confluence_stats.items(), key=lambda x: (x[1]["wins"]/(x[1]["wins"]+x[1]["losses"])*100) if (x[1]["wins"]+x[1]["losses"]) > 0 else 0, reverse=True)
+    def _safe_win_rate(item):
+        stat = item[1]
+        decisions = stat["wins"] + stat["losses"]
+        return (stat["wins"] / decisions * 100) if decisions > 0 else 0.0
+
+    sorted_confs = sorted(confluence_stats.items(), key=_safe_win_rate, reverse=True)
     for conf, stat in sorted_confs:
         decisions = stat["wins"] + stat["losses"]
         wr = (stat["wins"] / decisions * 100) if decisions > 0 else 0.0

@@ -3,16 +3,30 @@ import sys
 import json
 import urllib.request
 import urllib.parse
+import urllib.error
+import time as _time
 
-def local_request(endpoint):
+def local_request(endpoint, retries=2, backoff=1.0):
+    """Consulta el servidor local de NinjaTrader con reintentos y diagnóstico."""
     url = f"http://localhost:7890{endpoint}"
-    req = urllib.request.Request(url, method="GET")
-    try:
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            if resp.status == 200:
-                return json.loads(resp.read().decode("utf-8"))
-    except Exception:
-        return None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                if resp.status == 200:
+                    return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, ConnectionRefusedError):
+                print(f"NinjaTrader no está ejecutándose (puerto 7890 rechazado)", file=sys.stderr)
+                return None
+            print(f"Error de red en intento {attempt+1}: {e}", file=sys.stderr)
+        except TimeoutError:
+            print(f"Timeout en NinjaTrader (intento {attempt+1}/{retries+1})", file=sys.stderr)
+        except Exception as e:
+            print(f"Error inesperado: {type(e).__name__}: {e}", file=sys.stderr)
+            return None
+        if attempt < retries:
+            _time.sleep(backoff * (attempt + 1))
     return None
 
 def check_fvg(bars):

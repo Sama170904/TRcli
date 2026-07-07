@@ -3,8 +3,10 @@
 import os
 import sys
 import json
+import math
 import argparse
 from pathlib import Path
+from datetime import datetime as dt_class
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -120,6 +122,13 @@ def parse_confluences(conf_str):
             parts.append(mapped)
     return parts
 
+def safe_float(value, default=0.0):
+    """Convierte un valor a float de forma segura, retornando un default si falla."""
+    try:
+        return float(str(value).strip()) if value else default
+    except Exception:
+        return default
+
 def preprocess_data(entries):
     df_list = []
     unique_confluences = set()
@@ -139,7 +148,7 @@ def preprocess_data(entries):
             unique_confluences.add(c)
             
         # Parámetros básicos
-        df_list.append({
+        trade_data = {
             "id": e.get("id"),
             "instrument": e.get("instrument", "").strip().upper(),
             "direction": 1 if e.get("direction") == "Long" else 0,
@@ -147,7 +156,42 @@ def preprocess_data(entries):
             "rr": float(e.get("rr") or 0.0),
             "confluences_raw": confs,
             "target": y
-        })
+        }
+        
+        # --- Feature Engineering ---
+        
+        # FE1 - Hora del día (codificación cíclica basada en minutos desde apertura 08:00)
+        dt_str = e.get("datetime", "")
+        if len(dt_str) >= 16:
+            try:
+                hour = int(dt_str[11:13])
+                minute = int(dt_str[14:16])
+                mins_since_open = (hour - 8) * 60 + minute
+                trade_data["hour_sin"] = math.sin(2 * math.pi * mins_since_open / 480)
+                trade_data["hour_cos"] = math.cos(2 * math.pi * mins_since_open / 480)
+            except (ValueError, IndexError):
+                trade_data["hour_sin"] = 0.0
+                trade_data["hour_cos"] = 1.0
+        else:
+            trade_data["hour_sin"] = 0.0
+            trade_data["hour_cos"] = 1.0
+        
+        # FE3 - Conteo total de confluencias
+        trade_data["n_confluences"] = len(confs)
+        
+        # FE4 - Ancho del Stop Loss (distancia entry-SL en puntos)
+        trade_data["sl_width_pts"] = abs(safe_float(e.get("entry")) - safe_float(e.get("sl")))
+        
+        # FE5 - Día de la semana (0=Lunes ... 4=Viernes)
+        if len(dt_str) >= 10:
+            try:
+                trade_data["day_of_week"] = dt_class.fromisoformat(dt_str[:10]).weekday()
+            except (ValueError, TypeError):
+                trade_data["day_of_week"] = 0
+        else:
+            trade_data["day_of_week"] = 0
+        
+        df_list.append(trade_data)
         
     if not df_list:
         return None, None
@@ -223,7 +267,7 @@ def main():
             for train_idx, test_idx in loo.split(X):
                 X_tr, X_ts = X.iloc[train_idx], X.iloc[test_idx]
                 y_tr, y_ts = y.iloc[train_idx], y.iloc[test_idx]
-                temp_clf = RandomForestClassifier(n_estimators=30, max_depth=2, random_state=42)
+                temp_clf = RandomForestClassifier(n_estimators=50, max_depth=3, random_state=42)
                 temp_clf.fit(X_tr, y_tr)
                 scores.append(temp_clf.score(X_ts, y_ts))
             acc = np.mean(scores) * 100
@@ -284,7 +328,12 @@ def main():
         
         # Predecir probabilidades
         probs = clf.predict_proba(input_df)[0]
-        win_prob = probs[1] * 100
+        classes = list(clf.classes_)
+        if 1 in classes:
+            win_prob = probs[classes.index(1)] * 100
+        else:
+            win_prob = 0.0
+            print("Advertencia: Historial insuficiente — todos los trades tienen el mismo resultado.")
         
         print("\n" + "=" * 50)
         print(f"SETUP EVALUADO:")

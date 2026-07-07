@@ -14,6 +14,23 @@ from smartmoneyconcepts import smc
 import yfinance as yf
 import urllib.request
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
+
+def normalize_yf_columns(df):
+    """Aplana MultiIndex y normaliza columnas de Yahoo Finance a minúsculas con tipos float"""
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [c[0].lower() if isinstance(c, tuple) else c.lower() for c in df.columns]
+    else:
+        df.columns = [c.lower() for c in df.columns]
+    for col in ["open", "high", "low", "close", "volume"]:
+        if col in df.columns:
+            df[col] = df[col].astype(float)
+    return df
+
+def filter_active(df, column_name):
+    """Filtra OBs/FVGs activos (no mitigados) de un DataFrame SMC"""
+    return df[df[column_name].notna() & (df[column_name] != 0) & 
+              ((df["MitigatedIndex"] == 0) | df["MitigatedIndex"].isna())]
 
 def get_candle_color(open_p, close_p):
     return "G" if close_p >= open_p else "R"
@@ -60,13 +77,7 @@ def fetch_htf_data(symbol_yf, interval, period, count=100):
         if df.empty:
             return None
         # Convertir columnas a minúsculas, aplanando MultiIndex si es necesario
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = [c[0].lower() if isinstance(c, tuple) else c.lower() for c in df.columns]
-        else:
-            df.columns = [c.lower() for c in df.columns]
-        # Asegurar tipos float
-        for col in ["open", "high", "low", "close", "volume"]:
-            df[col] = df[col].astype(float)
+        df = normalize_yf_columns(df)
         return df.tail(count)
     except Exception as e:
         print(f"Advertencia al descargar temporalidad HTF ({interval}) para {symbol_yf}: {e}", file=sys.stderr)
@@ -84,8 +95,8 @@ def analyze_tf_structure(df, swing_len=5):
         
         last_price = float(df["close"].iloc[-1])
         
-        active_obs = obs[obs["OB"].notna() & (obs["OB"] != 0) & ((obs["MitigatedIndex"] == 0) | obs["MitigatedIndex"].isna())]
-        active_fvgs = fvgs[fvgs["FVG"].notna() & (fvgs["FVG"] != 0) & ((fvgs["MitigatedIndex"] == 0) | fvgs["MitigatedIndex"].isna())]
+        active_obs = filter_active(obs, "OB")
+        active_fvgs = filter_active(fvgs, "FVG")
         
         recent_bos = bos_choch.dropna(subset=["BOS", "CHOCH"], how="all").tail(2)
         bias = "Neutral"
@@ -146,15 +157,8 @@ def check_smt_divergence():
         if df_nq.empty or df_es.empty:
             return None
             
-        if isinstance(df_nq.columns, pd.MultiIndex):
-            df_nq.columns = [c[0].lower() if isinstance(c, tuple) else c.lower() for c in df_nq.columns]
-        else:
-            df_nq.columns = [c.lower() for c in df_nq.columns]
-            
-        if isinstance(df_es.columns, pd.MultiIndex):
-            df_es.columns = [c[0].lower() if isinstance(c, tuple) else c.lower() for c in df_es.columns]
-        else:
-            df_es.columns = [c.lower() for c in df_es.columns]
+        df_nq = normalize_yf_columns(df_nq)
+        df_es = normalize_yf_columns(df_es)
         
         swings_nq = smc.swing_highs_lows(df_nq, swing_length=3)
         swings_es = smc.swing_highs_lows(df_es, swing_length=3)
@@ -223,12 +227,19 @@ def get_ninjatrader_orderflow():
 
 def analyze_market_top_down(yf_symbol):
     """Descarga y analiza de forma estructurada todas las 9 temporalidades de un mercado"""
-    df_1m = fetch_htf_data(yf_symbol, interval="1m", period="2d", count=500)
-    df_2m = fetch_htf_data(yf_symbol, interval="2m", period="5d", count=200)
-    df_5m = fetch_htf_data(yf_symbol, interval="5m", period="5d", count=200)
-    df_15m = fetch_htf_data(yf_symbol, interval="15m", period="5d", count=200)
-    df_30m = fetch_htf_data(yf_symbol, interval="30m", period="10d", count=200)
-    df_1h = fetch_htf_data(yf_symbol, interval="1h", period="30d", count=200)
+    # M2: Paralelizar las 6 descargas HTF con ThreadPoolExecutor
+    fetch_args = [
+        (yf_symbol, "1m", "2d", 500),
+        (yf_symbol, "2m", "5d", 200),
+        (yf_symbol, "5m", "5d", 200),
+        (yf_symbol, "15m", "5d", 200),
+        (yf_symbol, "30m", "10d", 200),
+        (yf_symbol, "1h", "30d", 200),
+    ]
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = [executor.submit(fetch_htf_data, *args) for args in fetch_args]
+        results = [f.result() for f in futures]
+    df_1m, df_2m, df_5m, df_15m, df_30m, df_1h = results
     
     df_3m = None
     df_4m = None
@@ -236,10 +247,11 @@ def analyze_market_top_down(yf_symbol):
     
     if df_1m is not None:
         try:
-            df_3m = df_1m.resample('3T').agg({
+            # M6: Usar offsets modernos de Pandas >=2.2
+            df_3m = df_1m.resample('3min').agg({
                 'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'
             }).dropna().tail(200)
-            df_4m = df_1m.resample('4T').agg({
+            df_4m = df_1m.resample('4min').agg({
                 'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'
             }).dropna().tail(200)
         except Exception as e:
@@ -247,12 +259,19 @@ def analyze_market_top_down(yf_symbol):
             
     if df_1h is not None:
         try:
-            df_4h = df_1h.resample('4H').agg({
+            # M6: Usar offsets modernos de Pandas >=2.2
+            df_4h = df_1h.resample('4h').agg({
                 'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'
             }).dropna().tail(200)
         except Exception as e:
             print(f"Advertencia al resamplear HTF (4H) para {yf_symbol}: {e}", file=sys.stderr)
             
+    # C2: Fallback robusto si df_2m y df_5m son ambos None
+    fallback_df = None
+    for df in [df_2m, df_5m, df_15m, df_1h]:
+        if df is not None and not df.empty:
+            fallback_df = df
+            break
     return {
         "4H": analyze_tf_structure(df_4h, swing_len=5),
         "1H": analyze_tf_structure(df_1h, swing_len=5),
@@ -263,8 +282,8 @@ def analyze_market_top_down(yf_symbol):
         "3m": analyze_tf_structure(df_3m, swing_len=5),
         "2m": analyze_tf_structure(df_2m, swing_len=5),
         "1m": analyze_tf_structure(df_1m, swing_len=5),
-        "df_2m": df_2m if df_2m is not None else df_5m,
-        "last_price": float(df_2m["close"].iloc[-1]) if df_2m is not None else (float(df_5m["close"].iloc[-1]) if df_5m is not None else 0.0)
+        "df_2m": fallback_df,
+        "last_price": float(fallback_df["close"].iloc[-1]) if fallback_df is not None else 0.0
     }
 
 def determine_relative_strength(mnq_analysis, mes_analysis):
@@ -527,9 +546,12 @@ def main():
     
     # 7. Reglas de Gatillos y Filtros Negativos (Qué debe pasar y cuándo NO operar)
     # Long triggers
+    # C1: Acceso seguro a obs[0] — verificar que la lista tenga elementos
+    obs_15m = mnq_analysis['15m']['obs']
+    obs_ref = f"{obs_15m[0]['bottom']:.1f}" if obs_15m else "N/A (sin OBs detectados en 15m)"
     long_triggers = (
         f"1. **Barrida de Liquidez Estructural (Sweep):** El precio de {most_bullish.split(' ')[0]} debe barrer liquidez externa inferior "
-        f"(mínimo de sesión previa o swing low local en {mnq_analysis['15m']['obs'][0]['bottom']:.1f} o similar) en temporalidad intermedia.\n"
+        f"(mínimo de sesión previa o swing low local en {obs_ref} o similar) en temporalidad intermedia.\n"
         f"2. **Desplazamiento y Confirmación (iFVG):** Tras barrer liquidez, el precio debe desplazarse fuereña en el gráfico LTF (1m-5m) "
         f"y cerrar con cuerpo completo por encima de un FVG bajista, convirtiéndolo en un Inverse FVG (iFVG).\n"
         f"3. **Perfil de Entrada Preferente:** Priorizar perfiles G-R-G (Fáciles de Invertir) para validar el orderflow alcista con momentum."
@@ -599,8 +621,12 @@ def main():
         ml_result_mes = run_ml_predict("ES", mes_analysis["1H"]["bias"], len(mes_analysis["2m"]["fvgs"]) > 0, len(mes_analysis["2m"]["fvgs"]) > 0, len(mes_analysis["2m"]["obs"]) > 0)
 
     # 10. Graficar en subplots: Izquierda MNQ, Derecha MES (Estética Premium)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))
+    # C2: Guard — verificar que tengamos datos para graficar
+    if mnq_analysis["df_2m"] is None or mes_analysis["df_2m"] is None:
+        print("Error: No se pudieron descargar datos para graficar.", file=sys.stderr)
+    # M1: plt.style.use ANTES de plt.subplots para aplicar el estilo correctamente
     plt.style.use('dark_background')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))
     fig.patch.set_facecolor('#0f172a')
     
     def plot_market(ax, df_mkt, active_obs, active_fvgs, swings, title_name):
@@ -678,8 +704,8 @@ def main():
     swings_nq = smc.swing_highs_lows(df_mnq_2m, swing_length=5)
     obs_nq = smc.ob(df_mnq_2m, swings_nq)
     fvgs_nq = smc.fvg(df_mnq_2m)
-    active_obs_nq = obs_nq[obs_nq["OB"].notna() & (obs_nq["OB"] != 0) & ((obs_nq["MitigatedIndex"] == 0) | obs_nq["MitigatedIndex"].isna())]
-    active_fvgs_nq = fvgs_nq[fvgs_nq["FVG"].notna() & (fvgs_nq["FVG"] != 0) & ((fvgs_nq["MitigatedIndex"] == 0) | fvgs_nq["MitigatedIndex"].isna())]
+    active_obs_nq = filter_active(obs_nq, "OB")
+    active_fvgs_nq = filter_active(fvgs_nq, "FVG")
     plot_market(ax1, df_mnq_2m, active_obs_nq, active_fvgs_nq, swings_nq, f"Nasdaq (MNQ) 2m - Price: {mnq_analysis['last_price']:.2f}")
 
     # Graficar MES
@@ -687,8 +713,8 @@ def main():
     swings_es = smc.swing_highs_lows(df_mes_2m, swing_length=5)
     obs_es = smc.ob(df_mes_2m, swings_es)
     fvgs_es = smc.fvg(df_mes_2m)
-    active_obs_es = obs_es[obs_es["OB"].notna() & (obs_es["OB"] != 0) & ((obs_es["MitigatedIndex"] == 0) | obs_es["MitigatedIndex"].isna())]
-    active_fvgs_es = fvgs_es[fvgs_es["FVG"].notna() & (fvgs_es["FVG"] != 0) & ((fvgs_es["MitigatedIndex"] == 0) | fvgs_es["MitigatedIndex"].isna())]
+    active_obs_es = filter_active(obs_es, "OB")
+    active_fvgs_es = filter_active(fvgs_es, "FVG")
     plot_market(ax2, df_mes_2m, active_obs_es, active_fvgs_es, swings_es, f"S&P 500 (MES) 2m - Price: {mes_analysis['last_price']:.2f}")
 
     # Guardar gráficos en sus rutas
@@ -701,19 +727,18 @@ def main():
     
     workspace_img_path = os.path.join(imagenes_dir, f"{today_str}_pre_trade_dual.png")
     
-    # Ruta del artefacto actual de Gemini
-    artifact_dir = r"C:\Users\rsama\AppData\Local\Temp" # Fallback temporal
-    # Buscamos el workspace actual de Gemini por la ruta del prompt
-    gemini_workspace = r"C:\Users\rsama\.gemini\antigravity-cli\brain\02cb9977-937b-410d-8eb5-107b2e6261c9"
-    if os.path.exists(gemini_workspace):
-        artifact_dir = gemini_workspace
+    # A4: Ruta dinámica del artefacto de Gemini vía variable de entorno
+    gemini_workspace = os.environ.get("GEMINI_ARTIFACT_DIR", "")
+    if not gemini_workspace or not os.path.exists(gemini_workspace):
+        gemini_workspace = None
         
-    gemini_img_path = os.path.join(artifact_dir, "smc_analysis.png")
-    gemini_report_path = os.path.join(artifact_dir, "smc_analysis_report.md")
+    gemini_img_path = os.path.join(gemini_workspace, "smc_analysis.png") if gemini_workspace else None
+    gemini_report_path = os.path.join(gemini_workspace, "smc_analysis_report.md") if gemini_workspace else None
     
     plt.tight_layout()
     plt.savefig(workspace_img_path, dpi=150, facecolor='#0f172a')
-    plt.savefig(gemini_img_path, dpi=150, facecolor='#0f172a')
+    if gemini_img_path:
+        plt.savefig(gemini_img_path, dpi=150, facecolor='#0f172a')
     plt.close()
 
     # 11. Generar e invocar el reporte Markdown
@@ -745,8 +770,22 @@ def main():
   * Busca compras únicamente en la **Banda Inferior de -2 Desviaciones** y ventas en la **Banda Superior de +2 Desviaciones** cuando confluyan con barridas de liquidez de micro-temporalidad.
   * Evita buscar continuaciones largas. Mantén objetivos cortos y toma ganancias al regresar a la línea del VWAP."""
 
-    def generate_md_report(f, img_path, orderflow_data):
+    def generate_md_report(f, img_path, orderflow_data, frontmatter_vars=None):
         tfs = ["4H", "1H", "30m", "15m", "5m", "4m", "3m", "2m", "1m"]
+        # C8: Agregar frontmatter YAML al inicio del reporte
+        if frontmatter_vars:
+            smt_active = bool(frontmatter_vars.get("smt_result") and "DETECTADO" in str(frontmatter_vars["smt_result"]))
+            f.write(f"""---
+title: "Pre-Trade {frontmatter_vars['today_str']}"
+tags: [pre-trade, scanner, smc]
+created: {frontmatter_vars['today_str']} {time.strftime('%H:%M')}
+bias: "{frontmatter_vars['bias_local']}"
+mnq_score: {frontmatter_vars['mnq_score']}
+mes_score: {frontmatter_vars['mes_score']}
+smt_active: {smt_active}
+---
+
+""")
         f.write(f"""# 🛠️ Reporte Pre-Trade Avanzado: Mapa Dual de Confluencias (MNQ & MES)
 
 Este reporte evalúa la estructura de mercado y dibuja la confluencia entre tus marcas de TradingView recopiladas vía CDP a lo largo de las 9 temporalidades analizadas en Nasdaq (`MNQ`) y S&P 500 (`MES`).
@@ -898,14 +937,24 @@ Este reporte evalúa la estructura de mercado y dibuja la confluencia entre tus 
 ![Gráfico Dual de Confluencias]({img_path})
 """)
 
+    # Preparar variables de frontmatter para C8
+    frontmatter_vars = {
+        "today_str": today_str,
+        "bias_local": bias_local,
+        "mnq_score": mnq_score,
+        "mes_score": mes_score,
+        "smt_result": smt_result,
+    }
+    
     # Escribir reporte en Obsidian
     workspace_report_path = os.path.join(bitacoras_dir, f"{today_str}_pre_trade.md")
     with open(workspace_report_path, "w", encoding="utf-8") as f:
-        generate_md_report(f, f"../imagenes/{today_str}_pre_trade_dual.png", orderflow_data)
+        generate_md_report(f, f"../imagenes/{today_str}_pre_trade_dual.png", orderflow_data, frontmatter_vars)
 
-    # Escribir reporte espejo en Gemini
-    with open(gemini_report_path, "w", encoding="utf-8") as f:
-        generate_md_report(f, f"file:///{gemini_img_path.replace(chr(92), '/')}", orderflow_data)
+    # Escribir reporte espejo en Gemini (solo si el workspace existe)
+    if gemini_report_path:
+        with open(gemini_report_path, "w", encoding="utf-8") as f:
+            generate_md_report(f, f"file:///{gemini_img_path.replace(chr(92), '/')}", orderflow_data, frontmatter_vars)
 
     print(f"\n=========================================================")
     print("=== REPORTE DE BIAS Y ESTRATEGIA PRE-TRADE DUAL ===")
@@ -935,7 +984,10 @@ Este reporte evalúa la estructura de mercado y dibuja la confluencia entre tus 
     print(bad_short)
     print("=========================================================")
     print(f"Reporte de sesión guardado con éxito en: {workspace_report_path}")
-    print(f"Reporte espejo Gemini actualizado en: {gemini_report_path}")
+    if gemini_report_path:
+        print(f"Reporte espejo Gemini actualizado en: {gemini_report_path}")
+    else:
+        print("Aviso: Variable GEMINI_ARTIFACT_DIR no configurada o directorio no existe. Reporte espejo Gemini omitido.")
 
 if __name__ == "__main__":
     main()

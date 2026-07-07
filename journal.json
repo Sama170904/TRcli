@@ -1,5 +1,22 @@
 [
   {
+    "id": "1783181133000",
+    "datetime": "2026-07-07T08:45",
+    "instrument": "ES",
+    "session": "NY AM KZ",
+    "direction": "Long",
+    "entry": "7577.50",
+    "sl": "7569.00",
+    "tp": "7598.00",
+    "exit": "7569.00",
+    "result": "Loss",
+    "rr": "0.00",
+    "confluences": "Inverse FVG / inverse structure present; Buy-side / sell-side liquidity swept",
+    "notes": "Long en MES a 7577.50 buscando rebote por reversión a la media tras barrida de London Low (7570.50) y confirmación de iFVG de 5m en TradingView. Entrada disciplinada con orden límite en la mitad de la vela. Stop Loss en 7569.00 fue barrido por la inercia bajista de un Día de Expansión Direccional Fuerte que continuó deslizándose por las bandas de -2/-3 desviaciones del VWAP hasta liquidar el Asia Low real en 7563.00.",
+    "mae": "34.0",
+    "mfe": "14.0"
+  },
+  {
     "id": "1783095180000",
     "datetime": "2026-07-06T08:53",
     "instrument": "ES",
