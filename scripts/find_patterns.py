@@ -343,15 +343,15 @@ def analyze_patterns():
         f.write(markdown_text)
         
     # Guardar en Gemini
-    gemini_workspace = r"C:\Users\rsama\.gemini\antigravity-cli\brain\02cb9977-937b-410d-8eb5-107b2e6261c9"
-    if os.path.exists(gemini_workspace):
+    gemini_workspace = os.environ.get("GEMINI_ARTIFACT_DIR", "")
+    if gemini_workspace and os.path.exists(gemini_workspace):
         gemini_report_path = Path(gemini_workspace) / "patterns_report.md"
         with open(gemini_report_path, "w", encoding="utf-8") as f:
             f.write(markdown_text)
             
     print(f"¡Análisis de patrones completado con éxito!")
     print(f"Reporte de patrones guardado en: {workspace_report_path}")
-    if os.path.exists(gemini_workspace):
+    if gemini_workspace and os.path.exists(gemini_workspace):
         print(f"Reporte espejo Gemini actualizado en: {gemini_report_path}")
 
 if __name__ == "__main__":

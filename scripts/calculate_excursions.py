@@ -44,53 +44,8 @@ def main():
     print(f"Gráfico activo detectado: {symbol}")
 
     # 2. Obtener dibujos manuales en tiempo real
-    js_get_drawings = r"""(function(){
-    try {
-        var api = window.TradingViewApi._activeChartWidgetWV.value();
-        var all = api.getAllShapes();
-        var drawings = [];
-        for (var i = 0; i < all.length; i++) {
-            var s = all[i];
-            var shape = api.getShapeById(s.id);
-            if (shape) {
-                var pts = null;
-                try { pts = shape.getPoints(); } catch(e) {}
-                if (!pts) { try { pts = shape.points(); } catch(e) {} }
-                var props = null;
-                try { props = shape.getProperties(); } catch(e) {}
-                if (!props) { try { props = shape.properties(); } catch(e) {} }
-                drawings.push({
-                    id: s.id,
-                    name: s.name,
-                    points: pts,
-                    properties: props
-                });
-            }
-        }
-        return { success: true, drawings: drawings };
-    } catch(e) {
-        return { success: false, error: e.message };
-    }
-    })()"""
-
-    drawings_eval = subprocess.run(
-        ["node", mcp_cli_path, "ui", "eval", js_get_drawings],
-        capture_output=True,
-        text=True
-    )
-    
-    user_shapes = []
-    if drawings_eval.returncode == 0:
-        try:
-            draw_data = json.loads(drawings_eval.stdout)
-            if draw_data.get("success"):
-                if "result" in draw_data and isinstance(draw_data["result"], dict):
-                    user_shapes = draw_data["result"].get("drawings", [])
-                else:
-                    user_shapes = draw_data.get("drawings", [])
-        except Exception as e:
-            print(f"Error parseando dibujos manuales: {e}", file=sys.stderr)
-            return
+    from utils import extract_cdp_drawings
+    user_shapes = extract_cdp_drawings(mcp_cli_path)
 
     # Buscar herramientas de posición (Long/Short)
     positions = []
@@ -122,6 +77,39 @@ def main():
     if target_price < entry_price:
         direction = "Short"
         
+    # Cargar journal.json y validar coincidencia
+    latest = None
+    entries = []
+    if journal_path.exists():
+        try:
+            entries = json.loads(journal_path.read_text(encoding="utf-8"))
+            if entries:
+                latest = entries[0]
+            else:
+                print("El archivo journal.json existe pero no tiene trades registrados.")
+                return
+        except Exception as e:
+            print(f"Error al leer journal.json: {e}", file=sys.stderr)
+            return
+    else:
+        print("No se encontró el archivo journal.json. Registra un trade en la UI primero.")
+        return
+
+    # Validar coincidencia de instrumento
+    mkt_inst = latest.get("instrument", "").upper()
+    if mkt_inst == "NQ" and "NQ" not in symbol.upper():
+        print(f"⚠️ El último trade registrado es de NQ, pero el gráfico activo es {symbol}. Abortando.")
+        return
+    elif mkt_inst == "ES" and "ES" not in symbol.upper():
+        print(f"⚠️ El último trade registrado es de ES, pero el gráfico activo es {symbol}. Abortando.")
+        return
+
+    # Validar coincidencia de dirección
+    trade_dir = latest.get("direction", "")
+    if trade_dir.lower() != direction.lower():
+        print(f"⚠️ El último trade registrado es {trade_dir}, pero la posición dibujada en el gráfico es {direction}. Abortando.")
+        return
+
     times = [pt.get("time") for pt in pts if pt.get("time") is not None]
     if not times:
         print("No se pudieron extraer las coordenadas de tiempo del dibujo.")
@@ -200,26 +188,17 @@ def main():
     print(f"MAE (Max Drawdown): {mae_val:.2f} {unit} | MFE (Max Run): {mfe_val:.2f} {unit}")
 
     # 5. Actualizar de forma automática el diario de trading (journal.json)
-    if journal_path.exists():
-        try:
-            entries = json.loads(journal_path.read_text(encoding="utf-8"))
-            if entries:
-                # Actualizar el trade más reciente (el primero en la lista)
-                latest = entries[0]
-                latest["mae"] = f"{mae_val:.1f}"
-                latest["mfe"] = f"{mfe_val:.1f}"
-                
-                # Escribir de vuelta a journal.json
-                journal_path.write_text(
-                    json.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8"
-                )
-                print(f"¡Éxito! Se ha actualizado el último trade registrado en tu diario web con MAE/MFE ({latest.get('instrument')} {latest.get('direction')}).")
-            else:
-                print("El archivo journal.json existe pero no tiene trades registrados.")
-        except Exception as e:
-            print(f"Error al actualizar journal.json: {e}", file=sys.stderr)
-    else:
-        print("No se encontró el archivo journal.json. Registra un trade en la UI primero.")
+    latest["mae"] = round(float(mae_val), 1)
+    latest["mfe"] = round(float(mfe_val), 1)
+    
+    try:
+        # Escribir de vuelta a journal.json
+        journal_path.write_text(
+            json.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"¡Éxito! Se ha actualizado el último trade registrado en tu diario web con MAE/MFE ({latest.get('instrument')} {latest.get('direction')}).")
+    except Exception as e:
+        print(f"Error al actualizar journal.json: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     main()

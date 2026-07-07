@@ -13,11 +13,11 @@ if hasattr(sys.stdout, "reconfigure"):
 try:
     import pandas as pd
     import numpy as np
-    from sklearn.ensemble import RandomForestClassifier
+    import lightgbm as lgb
     from sklearn.model_selection import LeaveOneOut
 except ImportError:
     print("Error: Faltan dependencias necesarias.")
-    print("Por favor, ejecuta: pip install pandas scikit-learn numpy")
+    print("Por favor, ejecuta: pip install pandas lightgbm numpy scikit-learn")
     sys.exit(1)
 
 def clean_text(text):
@@ -258,13 +258,27 @@ def main():
     df = df.fillna(0)
     
     # Separar características de entrenamiento
-    features_to_drop = ["id", "date", "instrument", "target", "mae", "mfe"]
+    features_to_drop = ["id", "date", "instrument", "target", "mae", "mfe", "rr"]
     X = df.drop(columns=features_to_drop)
     y = df["target"]
     
-    # Entrenar el clasificador avanzado Random Forest
-    clf = RandomForestClassifier(n_estimators=100, max_depth=4, random_state=42)
-    clf.fit(X, y)
+    # Entrenar el clasificador avanzado LightGBM
+    # Parámetros optimizados para dataset pequeño para evitar overfitting
+    train_data = lgb.Dataset(X, label=y)
+    params = {
+        "objective": "binary",
+        "metric": "binary_logloss",
+        "boosting_type": "gbdt",
+        "learning_rate": 0.05,
+        "num_leaves": 7,
+        "max_depth": 3,
+        "min_data_in_leaf": 2,
+        "verbosity": -1,
+        "random_state": 42
+    }
+    
+    # Entrenar el modelo final
+    gbm = lgb.train(params, train_data, num_boost_round=50)
     
     # Evaluación con validación cruzada Leave One Out
     loo = LeaveOneOut()
@@ -272,15 +286,29 @@ def main():
     for train_idx, test_idx in loo.split(X):
         X_tr, X_ts = X.iloc[train_idx], X.iloc[test_idx]
         y_tr, y_ts = y.iloc[train_idx], y.iloc[test_idx]
-        temp_clf = RandomForestClassifier(n_estimators=50, max_depth=3, random_state=42)
-        temp_clf.fit(X_tr, y_tr)
-        scores.append(temp_clf.score(X_ts, y_ts))
+        
+        tr_data = lgb.Dataset(X_tr, label=y_tr)
+        temp_params = params.copy()
+        # Entrenar en N-1 muestras
+        temp_gbm = lgb.train(temp_params, tr_data, num_boost_round=30)
+        
+        # Validar en la muestra excluida
+        preds = temp_gbm.predict(X_ts)
+        pred_label = 1 if preds[0] >= 0.5 else 0
+        scores.append(1 if pred_label == y_ts.iloc[0] else 0)
     
     acc_cross_val = np.mean(scores) * 100
-    acc_train = clf.score(X, y) * 100
     
-    # Extraer pesos de las características
-    importances = clf.feature_importances_
+    # Precisión de entrenamiento
+    y_preds = gbm.predict(X)
+    y_pred_labels = [1 if p >= 0.5 else 0 for p in y_preds]
+    acc_train = np.mean([1 if y_pred_labels[i] == y.iloc[i] else 0 for i in range(len(y))]) * 100
+    
+    # Extraer pesos de las características (basado en ganancia)
+    importances = gbm.feature_importance(importance_type="gain")
+    # Normalizar importancias para que sumen 1.0
+    if np.sum(importances) > 0:
+        importances = importances / np.sum(importances)
     indices = np.argsort(importances)[::-1]
     
     # Agrupar importancias en categorías para análisis conceptual
@@ -423,14 +451,13 @@ def main():
     print(f"✅ Reporte local guardado en: {local_report_path}")
     
     # 2. Guardar en el directorio de artefactos de la conversación
-    conversation_id = "fc1651e6-1d80-496a-86bc-44cdcc992874"
-    appdata_brain_dir = Path(r"C:\Users\rsama\.gemini\antigravity-cli\brain") / conversation_id
-    if appdata_brain_dir.exists():
-        artifact_report_path = appdata_brain_dir / "advanced_ml_report.md"
+    gemini_workspace = os.environ.get("GEMINI_ARTIFACT_DIR", "")
+    if gemini_workspace and os.path.exists(gemini_workspace):
+        artifact_report_path = Path(gemini_workspace) / "advanced_ml_report.md"
         artifact_report_path.write_text(report_text, encoding="utf-8")
         print(f"✅ Reporte de artefacto guardado en: {artifact_report_path}")
     else:
-        print(f"⚠️ El directorio de artefactos {appdata_brain_dir} no existe. No se copió el artefacto espejo.")
+        print("⚠️ El directorio de artefactos de Gemini no está disponible. No se copió el artefacto espejo.")
         
     print("================================================================================")
     print("🎉 ANÁLISIS ML CONCLUIDO CON ÉXITO")

@@ -1,4 +1,4 @@
-# 📋 Plan de Procesamiento de Videos y Gestión de Tokens
+# 📋 Plan de Procesamiento de Videos y Gestión de Tokens (Refinado)
 
 Este documento define el protocolo de instrucciones que yo (**Antigravity**) seguiré paso a paso para procesar tus videos y playlists de trading, y las recomendaciones sobre qué modelo utilizar para optimizar el consumo de tokens.
 

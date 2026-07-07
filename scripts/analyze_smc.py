@@ -623,7 +623,8 @@ def main():
     # 10. Graficar en subplots: Izquierda MNQ, Derecha MES (Estética Premium)
     # C2: Guard — verificar que tengamos datos para graficar
     if mnq_analysis["df_2m"] is None or mes_analysis["df_2m"] is None:
-        print("Error: No se pudieron descargar datos para graficar.", file=sys.stderr)
+        print("Error: No se pudieron descargar datos para graficar. Abortando análisis visual.", file=sys.stderr)
+        return
     # M1: plt.style.use ANTES de plt.subplots para aplicar el estilo correctamente
     plt.style.use('dark_background')
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))

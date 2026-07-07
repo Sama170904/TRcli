@@ -1,8 +1,6 @@
-# 🏛️ Veredicto Arquitectónico y Propuesta de Escalabilidad
+# 🏛️ Veredicto Arquitectónico y Propuesta de Escalabilidad (100% Local)
 
 He analizado con rigor técnico tu propuesta de evolución para nuestro ecosistema de trading. Como copiloto de tu entorno local, mi veredicto es **favorable en un 80%**, con algunas advertencias críticas sobre optimización de recursos y latencia que debemos considerar para no sobrediseñar el sistema.
-
-A continuación, presento la autopsia técnica de cada punto y el plan de implementación recomendado.
 
 ---
 
@@ -13,8 +11,8 @@ A continuación, presento la autopsia técnica de cada punto y el plan de implem
 
 *   **El Riesgo de LlamaIndex:** Tu bóveda de Obsidian actualmente ocupa menos de **500 KB** (entre conceptos, bitácoras y configuraciones). Con mi ventana de contexto nativa de **1 a 2 millones de tokens**, puedo digerir tu bóveda entera en una sola llamada sin perder rendimiento. Introducir una base de datos vectorial (LlamaIndex) agregaría latencia de red, costo de tokens de embeddings, y dependencias pesadas de python (cffi, sqlite, etc.) sin aportar un beneficio real en velocidad.
 *   **La Alternativa Óptima:** 
-    1.  **Nexo Nacio de Búsqueda:** Utilizar el servidor MCP de Obsidian (`obsidian-second-brain`) es una excelente idea. Nos da herramientas nativas como `obsidian_search` y `graph_query` sin necesidad de indexación vectorial local.
-    2.  **Caché por Hash (SHA-256):** Es brillante. Mantendremos un script ligero que genere un JSON de hashes de tus bitácoras y conceptos. Yo solo leeré los archivos cuyos hashes hayan cambiado respecto a la última sesión.
+    1.  **Herramientas Locales Nativas:** Mis herramientas de lectura de archivos actuales (`grep_search`, `view_file`, `list_dir`) leen directamente tus notas en disco duro en milisegundos sin requerir servidores locales ni puertos abiertos.
+    2.  **Caché por Hash (SHA-256):** Es brillante. Mantendremos un script ligero (`scripts/sync_cache.py`) que genere un JSON de hashes de tus bitácoras y conceptos. Yo solo leeré los archivos cuyos hashes hayan cambiado respecto a la última sesión.
 *   **Freno de Seguridad:** Aprobado al 100%. Mi rol de escritura se limitará a la creación de bitácoras del día (`YYYY-MM-DD_session.md`) y actualización del `journal.json`, bloqueando cualquier intento de reescritura de datos históricos.
 
 ---
@@ -54,7 +52,7 @@ flowchart TD
 graph TD
     A["Solicitud del Usuario / Entrada en Vivo"] --> B{"Filtro 1: Ruta Operativa\n(configuracion.md)"}
     B -- "⚠️ Violación de Riesgo/Horario" --> C["BLOQUEAR OPERACIÓN IMMEDIATAMENTE\n(Ley Inquebrantable)"]
-    B -- "✅ Riesgo Aprobado" --> D{"Filtro 2: Ruta Macro\n(Búsqueda Web / Noticias)"}
+    B -- "✅ Riesgo Aprobado" --> D{"Filtro 2: Ruta Macro\n(Búsqueda Web Nata)"}
     D -- "⚠️ Evento de Alto Impacto Cercano" --> E["Sugerir Esperar / Reducir Loteo"]
     D -- "✅ Contexto Limpio" --> F{"Filtro 3: Ruta de Mentoría\n(Auditoría Técnica ICT)"}
     F --> G["Verificar POIs, SMT y Desplazamiento.\nCorregir interpretación si es necesario."]
@@ -62,14 +60,12 @@ graph TD
 
 1.  **Ruta Operativa (La Ley):** Inmutable. Mi primera capa de razonamiento siempre evaluará si tu solicitud viola tus reglas de gestión en `configuracion.md`. Si es así, te frenaré sin importar la confluencia técnica.
 2.  **Ruta de Mentoría (Auditoría ICT):** Dejaré de ser un mero registrador pasivo. Si marcas mal un POI, ignoras un SMT o fuerzas una narrativa alcista en una expansión bajista, te confrontaré activamente explicándote la teoría correcta.
-3.  **Ruta Macro (Web/Noticias):** Cruzaré el calendario económico diario en tiempo real con tus filtros de horario operativo.
+3.  **Ruta Macro (Web/Noticias):** Cruzaré el calendario económico diario en tiempo real con tus filtros de horario operativo usando mi buscador integrado de red.
 
 ---
 
-## 📅 Plan de Ruta para la Implementación
+## 📅 Plan de Ruta para la Implementación (Completada)
 
-Si apruebas esta estructura simplificada y ultra-eficiente, iniciaremos con los siguientes hitos de desarrollo:
-
-*   [ ] **Hito 1: El Escudo de Arranque (Startup Hook):** Crear el script `scripts/startup_shield.py` para leer `psych_profile.json` e inyectar dinámicamente mis directivas de protección en el chat al abrir la sesión.
-*   [ ] **Hito 2: ML Evolucionado (XGBoost + Psicología):** Reescribir `scripts/ml_advanced_analyzer.py` para entrenar un modelo XGBoost que integre variables de tu comportamiento del trade junto con los datos de mercado.
-*   [ ] **Hito 3: Integración de Servidores MCP:** Configurar los servidores de búsqueda web (Tavily/Brave) y Obsidian (`second-brain`) en tu configuración de MCP local.
+*   [x] **Hito 1: Sincronización por Caché de Hashes (`scripts/sync_cache.py`):** Crear caché SHA-256 para lecturas óptimas de la bóveda (completado).
+*   [x] **Hito 2: El Escudo de Arranque (Startup Hook):** Crear el script `scripts/startup_shield.py` para leer `psych_profile.json` e inyectar dinámicamente mis directivas de protección en el chat al abrir la sesión (completado).
+*   [x] **Hito 3: ML Evolucionado (LightGBM + Psicología):** Reescribir `scripts/ml_advanced_analyzer.py` para entrenar un modelo LightGBM que integre variables de tu comportamiento del trade junto con los datos de mercado (completado).

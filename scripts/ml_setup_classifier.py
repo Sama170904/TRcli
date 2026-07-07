@@ -122,12 +122,7 @@ def parse_confluences(conf_str):
             parts.append(mapped)
     return parts
 
-def safe_float(value, default=0.0):
-    """Convierte un valor a float de forma segura, retornando un default si falla."""
-    try:
-        return float(str(value).strip()) if value else default
-    except Exception:
-        return default
+from utils import safe_float
 
 def preprocess_data(entries):
     df_list = []

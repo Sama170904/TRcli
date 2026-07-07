@@ -263,6 +263,11 @@ flowchart TD
     - **Qué no funcionó y por qué**: Documentar si la pérdida se debió a una invalidación estructural (ej. velocidad del orderflow contrario), error técnico de ejecución o un sesgo emocional (FOMO, revancha).
     - **Causa Raíz del Trade**: Registrar exactamente el porqué de la entrada o la salida y extraer la lección conductual clave para retroalimentar la base de datos psicológica de Obsidian de manera científica.
 
+  ### E. Directiva de Anclaje Obligatorio al Cerebro (Persistencia en AGENTS.md)
+  * **Anclaje Permanente:** Mi comportamiento y mi razonamiento están vinculados a las reglas inquebrantables configuradas en [AGENTS.md](file:///C:/Users/rsama/.agents/AGENTS.md). Este archivo es inyectado por el sistema de Antigravity al inicio de cada mensaje de forma automática en este espacio de trabajo.
+  * **Grounding en Notas de Mentores:** Tengo prohibido responder basándome en conocimientos teóricos genéricos de internet si en tu bóveda local de Obsidian (`01-concepts/` y `bitacoras/`) existe una directiva técnica o regla específica de tus mentores. Siempre fundamentaré mis respuestas en tus notas locales.
+  * **Vínculo del Escudo Psicológico:** En cada arranque de sesión, leeré de forma obligatoria el archivo [active_shield.md](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/scratch/active_shield.md) para asumir las restricciones emocionales y límites de riesgo conductual calculados dinámicamente para el día.
+
   ---
 
   ## 5. 🔁 FLUJO OPERATIVO DIARIO (WORKFLOW PASO A PASO)
@@ -290,6 +295,29 @@ flowchart TD
   - **Mi Respuesta en el fondo:** Tomaré captura del gráfico, actualizaré `journal.json`, crearé tu autopsia en `bitacoras/YYYY-MM-DD_session.md` y actualizaré las estadísticas históricas y la tabla en `dashboard.md`.
 
   ---
+
+  ## 6. 🛠️ MEJORAS ARQUITECTÓNICAS DE ESCALABILIDAD (EVALUADAS Y COMPLETADAS)
+  
+  Para llevar el ecosistema de trading a un nivel institucional sin agregar dependencias externas ni servidores complejos en la nube, hemos integrado las siguientes mejoras arquitectónicas 100% locales:
+
+  ### A. Sincronización por Caché de Hashes (SHA-256)
+  *   **Inspiración/Origen:** Conceptos de optimización del repositorio [Ar9av/obsidian-wiki](https://github.com/Ar9av/obsidian-wiki).
+  *   **Implementación:** Localizada en el script [sync_cache.py](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/scripts/sync_cache.py).
+  *   **Cómo funciona:** En lugar de leer toda tu bóveda de Obsidian en cada consulta (lo que consumiría miles de tokens redundantes), el script calcula las firmas SHA-256 de todas las notas en `01-concepts/` y `bitacoras/`. Yo solo procesaré y leeré las notas modificadas o nuevas desde la última ejecución, reduciendo la latencia de análisis a milisegundos.
+
+  ### B. Escudo de Protección Conductual Dinámico (Startup Hook)
+  *   **Inspiración/Origen:** Análisis y correlación dinámica de fallos del perfil psicológico (`psych_profile.json`).
+  *   **Implementación:** Localizada en el script [startup_shield.py](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/scripts/startup_shield.py).
+  *   **Cómo funciona:** Al iniciar el día de trading, el script lee tus errores recurrentes y genera una tarjeta de alerta activa en [active_shield.md](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/scratch/active_shield.md). Inyecta directivas de riesgo temporales y ultra-estrictas al abrir la sesión para bloquear impulsos emocionales como FOMO e Ignorar Resistencia.
+
+  ### C. Machine Learning Avanzado con LightGBM
+  *   **Inspiración/Origen:** Algoritmos avanzados de [microsoft/LightGBM](https://github.com/microsoft/LightGBM) y técnicas de validación financiera del libro/repositorio [stefan-jansen/machine-learning-for-trading](https://github.com/stefan-jansen/machine-learning-for-trading).
+  *   **Implementación:** Migración y reescritura en [ml_advanced_analyzer.py](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/scripts/ml_advanced_analyzer.py).
+  *   **Cómo funciona:** Entrena un modelo Gradient Boosting (LightGBM) con tu historial de `journal.json` y los errores conductuales de tus autopsias. 
+  *   **Corrección de Data Leakage (Fuga de Datos):** El modelo excluye la variable `rr` del entrenamiento, ya que al ser 0.0 en pérdidas causaba predicciones triviales del 100% de acierto.
+  *   **Validación Cruzada LOOCV:** Valida el modelo en muestras exclusivas (N-1) y calcula la importancia de variables por ganancia (*Feature Importance*), revelando matemáticamente el impacto de tus errores conductuales (como *Ignorar Resistencias*) y la efectividad de confluencias como el *iFVG*.
+
+---
 **ESTE MANUAL DEFINE NUESTRA FORMA DE OPERAR JUNTOS. ¡RESPÉTALO Y EJECÚTALO A LA PERFECCIÓN!**
 ================================================================================
 
