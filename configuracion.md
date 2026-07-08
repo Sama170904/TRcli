@@ -155,15 +155,17 @@ flowchart TD
   ### B. Para archivar tu sesión de trading del día:
   > 🗣️ **Instrucción:** *"Terminé de tradear por hoy, hazme la bitácora de la sesión"*
   * **Qué haré en el fondo:**
-    1. **Preguntas de Validación del Trade:** Antes de cualquier captura, te preguntaré obligatoriamente:
+    1. **Lectura Obligatoria del Pre-Trade:** Antes de redactar cualquier línea, leeré obligatoriamente tu reporte pre-trade (`YYYY-MM-DD_pre_trade.md`) para entender el sesgo proyectado, escenarios permitidos, filtros y los DOLs (Draw on Liquidity) planificados al inicio de la sesión.
+    2. **Extracción y Cruce de Datos Reales (NT8 & TV):** Consultaré las ejecuciones (`/api/executions`), órdenes (`/api/orders`), y velas históricas (`/api/bars`) en NinjaTrader 8, así como tus marcaciones por CDP en TradingView, para contrastar tus niveles y horas exactas con el flujo de volumen, delta y la acción del precio real.
+    3. **Preguntas de Validación del Trade:** Te preguntaré de forma obligatoria para capturar tu perspectiva subjetiva:
        - *¿En qué temporalidad tomaste la operación?*
        - *¿En base a qué tomaste la entrada?*
        - *¿En base a qué estableciste tu Stop Loss?*
-    2. **Captura Centrada en la Operación:** Con base en tu respuesta, cambiaré a la temporalidad correspondiente en TradingView vía CDP y tomaré la captura de pantalla asegurando que se vea claramente el cuadro de posición (Long/Short) con tu entrada, stop loss y objetivo. La guardaré en `trading-journal/imagenes/YYYY-MM-DD_chart.png`.
-    3. **Solicitud de Datos Numéricos:** Te pediré los resultados rápidos del día (número de trades y PnL neto).
-    4. **Creación del Reporte de Autopsia:** Crearé el reporte `trading-journal/bitacoras/YYYY-MM-DD_session.md` detallando las confluencias, autopsia del trade e incrustando tu captura de pantalla real.
-    5. **Actualización de Dashboard:** Agregaré de forma automática la nueva fila de la sesión en tu tabla histórica de `dashboard.md` y actualizaré estadísticas.
-    6. **Cálculo de MAE/MFE:** Ejecutaré `scripts/calculate_excursions.py` para leer tu cuadro de posición en TradingView, calcular tus MAE/MFE reales en base a las velas y actualizar tu último trade en `journal.json`.
+    4. **Integración del Proceso de Pensamiento & Debate:** Documentaré detalladamente tu proceso de pensamiento e hipótesis del trade (incluyendo dudas y cambios de ideas en vivo). Estructuraré un debate honesto y crítico en la bitácora que contraste la analítica fría de la IA (volumen, SMT, soportes/resistencias) con tu lectura discrecional, determinando la validez real del proceso técnico basándose en el desenlace completo del mercado (y no en pullbacks temporales).
+    5. **Captura Centrada en la Operación:** Con base en tu respuesta, cambiaré a la temporalidad correspondiente en TradingView vía CDP y tomaré la captura de pantalla asegurando que se vea claramente el cuadro de posición (Long/Short) con tu entrada, stop loss y objetivo. La guardaré en `trading-journal/imagenes/YYYY-MM-DD_chart.png`.
+    6. **Creación del Reporte de Autopsia (Método Steenbarger):** Generaré el reporte `trading-journal/bitacoras/YYYY-MM-DD_session.md` estructurado de forma idéntica a las autopsias anteriores (Resumen, Capturas, Análisis Top-Down, Reporte de Trades, Proceso vs Resultado, Proceso de Pensamiento, Debate de Proceso y Tarjeta de Memoria).
+    7. **Actualización de Dashboard & Base de Datos:** Agregaré de forma automática la nueva fila de la sesión en tu tabla histórica de `dashboard.md` y actualizaré las estadísticas generales.
+    8. **Cálculo de MAE/MFE:** Ejecutaré `scripts/calculate_excursions.py` para leer tu cuadro de posición en TradingView, calcular tus MAE/MFE reales en base a las velas y actualizar tu último trade en `journal.json`, refrescando de paso tu perfil conductual en `psych_profile.json` y el `active_shield.md`.
 
   ### C. Para iniciar el escaneo de confluencias pre-trade (Opciones 2, 3 y 4):
   > 🗣️ **Instrucción:** *"Inicia el escáner premarket"*, *"Mapea mis confluencias"* o *"Prepara mi sesión del día"* (Ejecutado de 9:00 a 9:30 AM NY Time)

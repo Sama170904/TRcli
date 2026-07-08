@@ -12,7 +12,7 @@
     "result": "Win",
     "rr": 0.7,
     "confluences": "SMT divergence present; Fair Value Gap (FVG) retest",
-    "notes": "Short en MES a 7516.50 en el retest de un FVG bajista de 1m, con SMT bajista local respecto a Nasdaq. Entrada de continuación en discount macro que violaba el manual pero que fue cerrada a tiempo en 7511.00 (+5.50 puntos, +$220.00 USD netos) al detectar absorción y un SMT alcista gigante en el soporte de 1H. Excelente salida defensiva que evitó la reversión posterior hacia 7519.25.",
+    "notes": "Short en MES a 7516.50 en el retest de un FVG bajista de 1m, con SMT bajista local respecto a Nasdaq. Entrada de continuación en Día de Expansión/Imbalance que respetó el manual al ignorar el descuento macro e ir directo hacia el DOL inferior (el FVG de 5m sin mitigar). La salida anticipada en 7511.00 (+5.50 puntos, +$220.00 USD netos) fue una decisión defensiva muy bien ejecutada debido al riesgo del London High cercano, aunque el precio cayó posteriormente a 7494.75 y habría tocado el TP original.",
     "mae": 14.0,
     "mfe": 37.0
   },
