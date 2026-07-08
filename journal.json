@@ -1,5 +1,22 @@
 [
   {
+    "id": "1783518706000",
+    "datetime": "2026-07-08T08:51",
+    "instrument": "ES",
+    "session": "NY AM KZ",
+    "direction": "Short",
+    "entry": 7516.5,
+    "sl": 7524.5,
+    "tp": 7500.75,
+    "exit": 7511.0,
+    "result": "Win",
+    "rr": 0.7,
+    "confluences": "SMT divergence present; Fair Value Gap (FVG) retest",
+    "notes": "Short en MES a 7516.50 en el retest de un FVG bajista de 1m, con SMT bajista local respecto a Nasdaq. Entrada de continuación en discount macro que violaba el manual pero que fue cerrada a tiempo en 7511.00 (+5.50 puntos, +$220.00 USD netos) al detectar absorción y un SMT alcista gigante en el soporte de 1H. Excelente salida defensiva que evitó la reversión posterior hacia 7519.25.",
+    "mae": 14.0,
+    "mfe": 37.0
+  },
+  {
     "id": "1783181133000",
     "datetime": "2026-07-07T08:45",
     "instrument": "ES",
