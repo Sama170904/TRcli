@@ -16,13 +16,13 @@
   "warnings": [
     {
       "error": "Ignorar Resistencia",
-      "count": 11,
-      "percentage": 55.0
+      "count": 12,
+      "percentage": 60.0
     },
     {
       "error": "FOMO",
-      "count": 10,
-      "percentage": 50.0
+      "count": 11,
+      "percentage": 55.0
     },
     {
       "error": "Sobreoperar (Overtrading)",
