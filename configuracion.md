@@ -238,6 +238,26 @@ flowchart TD
     2. **Compilación**: Abre el editor de NinjaScript en NinjaTrader 8 (New -> NinjaScript Editor) y presiona **`F5`** (o compila directamente en el menú de NinjaTrader). El Add-On iniciará automáticamente el servidor HTTP local en `http://localhost:7890`.
     3. **Ejecutar el Servidor MCP**: El cliente Antigravity carga el servidor de forma nativa desde `trading-journal/ninjatrader-mcp/src/server.js` gracias al registro del archivo de configuración global `mcp_config.json`.
 
+  ### G. Protocolo de Análisis y Autopsia de Recaps Visuales (Mentores):
+  > 🗣️ **Instrucción:** *"Analiza este recap de [Nombre del Mentor] del día [Fecha]"* (con una o más fotos/videos adjuntos)
+  * **Qué haré en el fondo:**
+    1. **Filtro de Integridad y Clasificación (Anti-Ruido):**
+       - **Recaps Verificables (Videos/Texto explicativo):** Nivel de certeza "Alto/Verificado". Se permite registrar datos numéricos exactos de precios y PnL.
+       - **Recaps Interpretativos (Solo Fotos/Instagram):** Nivel de certeza "Media/Estimado". **Queda estrictamente prohibido registrar datos numéricos o transaccionales en `journal.json`** para evitar la contaminación de estadísticas. Solo se generará una nota de estudio en Markdown.
+    2. **Sincronización Obligatoria de Huso Horario (Timezone Sync):**
+       - Al leer la hora del gráfico o de las velas, sincronizaré la hora local de tu computadora en Guayaquil (Ecuador Time, UTC-5) con la hora oficial del mercado en Nueva York (Eastern Time, UTC-4 en horario de verano).
+       - Sumar obligatoriamente **1 hora** al reloj de Guayaquil durante Daylight Saving Time (DST) para evaluar en Nueva York Time (NYT) y alinear la apertura a las 09:30 NYT (08:30 GYE).
+    3. **Auditoría Visual de Temporalidades (Timeframe Audit):**
+       - Detectar e indicar explícitamente la temporalidad del gráfico (30s, 1m, 3m, 5m, etc.) en cada una de las capturas cargadas. Nunca asumir que comparten el mismo timeframe.
+    4. **Mapeo de Línea de Tiempo al Segundo (Timeline Grid Alignment):**
+       - Alinear la posición física de las flechas de ejecución (entrada/salida) con el eje de tiempo horizontal inferior de la captura para determinar el minuto exacto de la operación.
+    5. **Cruce de Datos Contra tu Propia Sesión:**
+       - Comparar el recap del mentor con tus operaciones del mismo día.
+       - **Análisis de Confluencia de Salida (Chasing / Exit Confluence):** Verificar si tus entradas coinciden con la zona de Take Profit (salida) de los mentores para detectar patrones de FOMO o persecución tardía.
+    6. **Estructura de Almacenamiento:**
+       - Las capturas se guardarán en `trading-journal/01-concepts/mentors/recaps/imagenes/`.
+       - La nota de estudio se creará en `trading-journal/01-concepts/mentors/recaps/YYYY-MM-DD_[Mentor]_[Setup].md` detallando el tipo de recap, temporalidades, confluencias visuales y la lección comparativa para tu diario.
+
   ---
 
 ## 4. 🧠 PROTOCOLO DE COMPORTAMIENTO PARA ANTIGRAVITY (AI CO-TRADER)
