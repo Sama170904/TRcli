@@ -5,12 +5,10 @@ Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias
 
 --- 
 
-## 🏆 ESTATUS DE LA CUENTA FONDEADA (EVAL)
-* **Tipo de Cuenta:** Evaluación (Eval)
-* **Balance Actual:** `$54,336.25 USD` (al 13/07/2026)
-* **Objetivo de Beneficio:** `$53,000.00 USD`
-* **Distancia al Objetivo:** **OBJETIVO SUPERADO POR `+$1,336.25 USD` 🎉 (Evaluación Aprobada)**
-* **Días Hábiles Restantes:** `0 días`
+## 🏆 ESTATUS DE LA CUENTA FONDEADA (PA)
+* **Tipo de Cuenta:** Performance Account (PA - Real)
+* **Balance Actual:** `$50,837.00 USD` (al 13/07/2026)
+* **Estado de la Cuenta:** Activa y Operando 🟢
 
 --- 
 

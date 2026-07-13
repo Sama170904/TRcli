@@ -157,17 +157,9 @@ def main():
     pct_be = (be_sessions / total_sessions * 100) if total_sessions > 0 else 0.0
     pct_no_trade = (no_trade_sessions / total_sessions * 100) if total_sessions > 0 else 0.0
 
-    # 3. Datos de cuenta fondeada
-    initial_balance = 50000.0
-    current_balance = initial_balance + total_pnl
-    target_balance = 53000.0
-    
-    if current_balance >= target_balance:
-        dist_pnl = current_balance - target_balance
-        goal_status = f"**OBJETIVO SUPERADO POR `+${dist_pnl:,.2f} USD` 🎉 (Evaluación Aprobada)**"
-    else:
-        dist_pnl = target_balance - current_balance
-        goal_status = f"**Resta `+${dist_pnl:,.2f} USD` para el objetivo de beneficio.**"
+    # 3. Datos de cuenta fondeada (Performance Account)
+    # Offset para alinear el PnL acumulado histórico con el balance real de la cuenta PA ($50,837.00 USD actual)
+    current_balance = 46500.75 + total_pnl
 
     # 4. Generar el reporte del dashboard.md
     report = []
@@ -177,12 +169,10 @@ def main():
     report.append("Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias.\n")
     report.append("--- \n")
     
-    report.append("## 🏆 ESTATUS DE LA CUENTA FONDEADA (EVAL)")
-    report.append(f"* **Tipo de Cuenta:** Evaluación (Eval)")
+    report.append("## 🏆 ESTATUS DE LA CUENTA FONDEADA (PA)")
+    report.append(f"* **Tipo de Cuenta:** Performance Account (PA - Real)")
     report.append(f"* **Balance Actual:** `${current_balance:,.2f} USD` (al {datetime.now().strftime('%d/%m/%Y')})")
-    report.append(f"* **Objetivo de Beneficio:** `${target_balance:,.2f} USD`")
-    report.append(f"* **Distancia al Objetivo:** {goal_status}")
-    report.append(f"* **Días Hábiles Restantes:** `0 días`\n")
+    report.append(f"* **Estado de la Cuenta:** Activa y Operando 🟢\n")
     report.append("--- \n")
     
     report.append("## 📈 ESTADÍSTICAS GENERALES DE LA CUENTA")
