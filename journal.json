@@ -1,5 +1,22 @@
 [
   {
+    "id": "1784185200000",
+    "datetime": "2026-07-15T08:53",
+    "instrument": "ES",
+    "session": "NY AM KZ",
+    "direction": "Long",
+    "entry": 7606.0,
+    "sl": 7601.75,
+    "tp": 7623.0,
+    "exit": 7618.75,
+    "result": "Win",
+    "rr": 3.0,
+    "confluences": "SMT Divergence present; At HTF PD array (OB / FVG / Breaker); In Kill Zone (London / NY AM / PM); order flow support; heatmap absorption",
+    "notes": "Long en MES en 7606.00 (10 contratos) en 1m CISD tras la apertura. Confluencias: SMT alcista claro (MNQ barrió mínimos macro y MES los sostuvo), MES apoyado en FVG de 4H/30m/15m respetados, y absorción/bloque de compra en heatmap. Gestión: SL original en 7601.75. Se fue a BE rápido (SL movido a 7610.75) debido a un FVG en contra de 5m en MES y noticias. Salida manual en 7618.75 (+12.75 puntos, +$637.50 USD netos) al ver que el precio chocó contra un bloque de venta gigante en el heatmap/orderflow. Excelente salida defensiva dado que Nasdaq seguía confirmando orderflow bajista con iFVGs bajistas activos.",
+    "mae": 1.0,
+    "mfe": 13.5
+  },
+  {
     "id": "1784101723000",
     "datetime": "2026-07-14T09:20",
     "instrument": "ES",

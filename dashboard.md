@@ -7,7 +7,7 @@ Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias
 
 ## 🏆 ESTATUS DE LA CUENTA FONDEADA (PA)
 * **Tipo de Cuenta:** Performance Account (PA - Real)
-* **Balance Actual:** `$50,993.25 USD` (al 14/07/2026)
+* **Balance Actual:** `$50,993.25 USD` (al 15/07/2026)
 * **Estado de la Cuenta:** Activa y Operando 🟢
 
 --- 
@@ -19,11 +19,11 @@ Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias
 * **Sesiones en Breakeven (BE):** `1` (4.2% de efectividad de sesión)
 * **Sesiones Perdedoras (Loss):** `8` (33.3% de efectividad de sesión)
 * **Sesiones sin Operar (No Trade):** `2` (8.3% de efectividad de sesión)
-* **Total Trades Ejecutados:** `38`
-  - *Trades Ganadores:* `19`
+* **Total Trades Ejecutados:** `39`
+  - *Trades Ganadores:* `20`
   - *Trades en Breakeven (BE):* `6`
   - *Trades Perdedores (SL):* `13`
-* **Win Rate de Trades:** `50.0%` (19/38)
+* **Win Rate de Trades:** `51.3%` (20/39)
 
 --- 
 
