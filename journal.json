@@ -1,5 +1,22 @@
 [
   {
+    "id": "1784208780000",
+    "datetime": "2026-07-16T08:34",
+    "instrument": "MNQ",
+    "session": "NY AM KZ",
+    "direction": "Short",
+    "entry": 29439.0,
+    "sl": 29512.5,
+    "tp": 29331.75,
+    "exit": 29331.5,
+    "result": "Win",
+    "rr": 1.46,
+    "confluences": "Stop hunt / liquidity grab confirmed; in kill zone (london / ny am / pm); htf market structure bias confirmed; fair value gap (fvg) on entry tf; inverse fvg / inverse structure present; at htf pd array (ob / fvg / breaker)",
+    "notes": "Short en MNQ en 29439.00 (4 contratos) en la apertura del mercado (08:34). El precio barrió la liquidez superior (stophunt de BSL) e ingresó a la zona de resistencia del FVG de 1H macro. En temporalidad de 1m, se formó un iFVG que no dio entrada directa por la longitud del desplazamiento (la vela bajó demasiado), pero el usuario esperó disciplinadamente el retroceso al FVG bajista de 1m y la confirmación del CISD (Change In State of Delivery) para entrar. Entrada perfecta en el retesteo del FVG bajista. Salida automática al alcanzar el objetivo en 29331.50 (+107.50 puntos, +$860.00 USD netos) en sincronía con el TP del short_position. Proceso impecable y conforme al plan operativo de la sesión.",
+    "mae": 251.0,
+    "mfe": 697.0
+  },
+  {
     "id": "1784185200000",
     "datetime": "2026-07-15T08:53",
     "instrument": "ES",

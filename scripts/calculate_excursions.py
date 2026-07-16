@@ -7,6 +7,11 @@ import subprocess
 import time
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 def get_tick_multiplier(symbol):
     symbol = symbol.upper()
     if "NQ" in symbol or "MES" in symbol or "ES" in symbol:
@@ -74,7 +79,7 @@ def main():
         return
         
     direction = "Long"
-    if target_price < entry_price:
+    if "short" in pos_shape.get("name", "").lower():
         direction = "Short"
         
     # Cargar journal.json y validar coincidencia

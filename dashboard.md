@@ -7,23 +7,23 @@ Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias
 
 ## 🏆 ESTATUS DE LA CUENTA FONDEADA (PA)
 * **Tipo de Cuenta:** Performance Account (PA - Real)
-* **Balance Actual:** `$50,993.25 USD` (al 15/07/2026)
+* **Balance Actual:** `$51,630.75 USD` (al 16/07/2026)
 * **Estado de la Cuenta:** Activa y Operando 🟢
 
 --- 
 
 ## 📈 ESTADÍSTICAS GENERALES DE LA CUENTA
-* **Balance Neto Total (Bitácora):** `+$4,492.50 USD`
-* **Total Sesiones Operadas:** `24`
-* **Sesiones Ganadoras (Win):** `13` (54.2% de efectividad de sesión)
-* **Sesiones en Breakeven (BE):** `1` (4.2% de efectividad de sesión)
-* **Sesiones Perdedoras (Loss):** `8` (33.3% de efectividad de sesión)
-* **Sesiones sin Operar (No Trade):** `2` (8.3% de efectividad de sesión)
-* **Total Trades Ejecutados:** `39`
-  - *Trades Ganadores:* `20`
+* **Balance Neto Total (Bitácora):** `+$5,130.00 USD`
+* **Total Sesiones Operadas:** `25`
+* **Sesiones Ganadoras (Win):** `14` (56.0% de efectividad de sesión)
+* **Sesiones en Breakeven (BE):** `1` (4.0% de efectividad de sesión)
+* **Sesiones Perdedoras (Loss):** `8` (32.0% de efectividad de sesión)
+* **Sesiones sin Operar (No Trade):** `2` (8.0% de efectividad de sesión)
+* **Total Trades Ejecutados:** `40`
+  - *Trades Ganadores:* `21`
   - *Trades en Breakeven (BE):* `6`
   - *Trades Perdedores (SL):* `13`
-* **Win Rate de Trades:** `51.3%` (20/39)
+* **Win Rate de Trades:** `52.5%` (21/40)
 
 --- 
 
@@ -31,6 +31,7 @@ Mantiene el acumulado histórico y los enlaces rápidos a las bitácoras diarias
 
 | Fecha | Día | PnL Neto (USD) | Trades | Resultado | Enlace a Bitácora Diaria |
 | :--- | :---: | :--- | :---: | :---: | :--- |
+| **15/07/2026** | Miércoles | **+$637.50** | 1 | 🟢 WIN | [Bitácora 15-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-15_session.md) |
 | **14/07/2026** | Martes | **+$156.25** | 2 | 🟢 WIN | [Bitácora 14-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-14_session.md) |
 | **13/07/2026** | Lunes | **+$302.50** | 2 | 🟢 WIN | [Bitácora 13-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-13_session.md) |
 | **10/07/2026** | Viernes | **$-132.50** | 2 | 🔴 LOSS | [Bitácora 10-07-2026](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/bitacoras/2026-07-10_session.md) |
