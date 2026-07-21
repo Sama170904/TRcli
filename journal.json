@@ -1,5 +1,22 @@
 [
   {
+    "id": "1784644154337",
+    "datetime": "2026-07-21T08:52",
+    "instrument": "ES",
+    "session": "NY AM KZ",
+    "direction": "Short",
+    "entry": 7506.75,
+    "sl": 7517.25,
+    "tp": 7485.75,
+    "exit": 7517.25,
+    "result": "Loss",
+    "rr": 0.0,
+    "confluences": "Inverse FVG / inverse structure present; At HTF PD array (OB / FVG / Breaker); In Kill Zone (London / NY AM / PM)",
+    "notes": "Entrada en Short tras formarse iFVG de 1m en MES luego de un pullback al 5m FVG Bullish. El mercado venía cayendo pero se encontraba en el rango local de la sesión asiática en zona de Descuento (Discount). No había LRLR (Low Resistance Liquidity Run) a favor. La fuerza del Nasdaq (MNQ) fuerte y el delta acumulado positivo (+3221) presionaron al alza, rompiendo la resistencia del Heatmap de ventas en MES y barriendo el stop loss en 7517.25.",
+    "mae": 10.5,
+    "mfe": 0.0
+  },
+  {
     "id": "1784539380000",
     "datetime": "2026-07-20T09:23",
     "instrument": "MNQ",
