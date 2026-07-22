@@ -1,5 +1,22 @@
 [
   {
+    "id": "1784728080000",
+    "datetime": "2026-07-22T08:48",
+    "instrument": "MNQ",
+    "session": "NY AM KZ",
+    "direction": "Short",
+    "entry": 29173.75,
+    "sl": 29204.5,
+    "tp": 29043.25,
+    "exit": 29204.5,
+    "result": "Loss",
+    "rr": 0.0,
+    "confluences": "Inverse FVG / inverse structure present; At HTF PD array (OB / FVG / Breaker); In Kill Zone (London / NY AM / PM)",
+    "notes": "Short en MNQ tras barrer London High y mitigar el FVG bajista de 4H/1H. Se entró en el iFVG de 1m y 3m. El trade falló porque MNQ era el activo fuerte y el muro de venta en ES fue absorbido en Bookmap por compradores agresivos (burbujas verdes grandes) que detonaron un breakout. Además, en MNQ Volumetric hubo una absorción alcista en la vela de las 08:50 AM (delta positivo +210 en vela roja) y el Cumulative Delta de NinjaTrader rotó fuertemente hacia positivo (+2421), barriendo el stop loss en 29204.50.",
+    "mae": 30.75,
+    "mfe": 21.75
+  },
+  {
     "id": "1784644154337",
     "datetime": "2026-07-21T08:52",
     "instrument": "ES",
