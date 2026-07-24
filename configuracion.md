@@ -339,6 +339,39 @@ flowchart TD
   *   **Corrección de Data Leakage (Fuga de Datos):** El modelo excluye la variable `rr` del entrenamiento, ya que al ser 0.0 en pérdidas causaba predicciones triviales del 100% de acierto.
   *   **Validación Cruzada LOOCV:** Valida el modelo en muestras exclusivas (N-1) y calcula la importancia de variables por ganancia (*Feature Importance*), revelando matemáticamente el impacto de tus errores conductuales (como *Ignorar Resistencias*) y la efectividad de confluencias como el *iFVG*.
 
+  ### D. Base de Datos Local de la Killzone (Grabador de Sesión y Backtesting)
+  *   **Inspiración/Origen:** La necesidad de almacenar el 100% de la información de precios, marcas manuales y psicología para entrenar modelos sin sobrecargar el contexto y con persistencia histórica.
+  *   **Implementación:** Localizada en el script [save_session_data.py](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/scripts/save_session_data.py).
+  *   **Cómo funciona:**
+      *   Al cerrar la sesión, el script cambia automáticamente entre `MES1!` y `MNQ1!` vía CDP, descargando las velas de 1m y los dibujos manuales de **ambos mercados** por separado.
+      *   El rango de la Killzone (`09:30` a `10:30` NYT) se calcula dinámicamente usando `zoneinfo` (`America/New_York`), soportando automáticamente los cambios de DST (verano: `08:30-09:30` GYE / invierno: `09:30-10:30` GYE).
+      *   Los datos se guardan en un JSON compacto en `historical_data/YYYY-MM-DD.json` (~20-30 KB por día, ~7.5 MB/año). Estructura del JSON:
+        ```json
+        {
+          "date": "YYYY-MM-DD",
+          "killzone_range_nyt": "09:30-10:30",
+          "symbols": {
+            "MES": { "bars_1m": [...], "drawings": [...] },
+            "MNQ": { "bars_1m": [...], "drawings": [...] }
+          },
+          "executions": [...]
+        }
+        ```
+      *   **Protección Anti-Sobreescritura:** Si el script se re-ejecuta con TradingView o NinjaTrader cerrados, preserva los datos previamente guardados en lugar de sobreescribirlos con arrays vacíos.
+      *   **Por qué se guardan todas las sesiones (Win y Loss):** Para evitar el *sesgo de selección* (Class Imbalance) en los modelos predictivos de Machine Learning, dándoles la capacidad de comparar las variables que distinguen un acierto de un fallo.
+      *   **Identificación Matemática de Conceptos:** A partir de los datos crudos de 1m, los scripts de Python resamplean y calculan mecánicamente las temporalidades de 2m, 3m, 4m y 5m. El simulador identifica de forma geométrica y matemática la formación de Fair Value Gaps (FVG), Inverse FVGs (iFVG), Change In State of Delivery (CISD) y Rejection Blocks para realizar backtesting local de alta fidelidad.
+
+  ### E. Ground Truth — Núcleo de Conocimiento Comprimido (Anti-Dilución de Contexto)
+  *   **Problema que resuelve:** Conforme avanza la conversación, la información leída al inicio de la sesión (configuración, bitácoras, escudo) se diluye en la ventana de contexto del modelo. Esto causa que las respuestas pierdan precisión y se basen en conocimiento genérico en lugar del sistema específico del usuario.
+  *   **Implementación:** Archivo [ground_truth.md](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/ground_truth.md) (~70 líneas ultra-compactas).
+  *   **Cómo funciona:** Destila en un solo archivo compacto la totalidad del entorno de Obsidian: las 5 fases del Mech Model, reglas de riesgo inquebrantables, filtros de exclusión, clasificación del día, los 5 errores psicológicos más recurrentes con frecuencia exacta, las verdades estadísticas del journal, las reglas clave de cada mentor (PB, Supreme, Fabio, Cramz, TJR, BionicNQ), y la jerarquía de temporalidades. Se carga obligatoriamente al inicio de cada sesión junto con `active_shield.md`.
+
+  ### F. Directiva Anti-Capitulación (Anti-Sycophancy)
+  *   **Problema que resuelve:** Los modelos de lenguaje tienden a capitular automáticamente cuando el usuario expresa desacuerdo, incluso si la posición original estaba correctamente fundamentada en las reglas del sistema. Esto refuerza sesgos emocionales (FOMO, racionalización) en lugar de proteger al trader.
+  *   **Implementación:** Directiva #5 en [AGENTS.md](file:///C:/Users/rsama/.agents/AGENTS.md).
+  *   **Cómo funciona:** Si Antigravity emite un análisis basado en las reglas de la bóveda y el usuario lo contradice, Antigravity re-examina su razonamiento pero NO capitula si su posición está respaldada por una regla documentada. Cita la fuente exacta y mantiene su posición con firmeza profesional. Solo cambia de posición ante evidencia nueva o un error factual demostrable.
+  *   **Alcance:** Aplica EXCLUSIVAMENTE en contexto de trading. En contextos no-trading (programación, web, preguntas generales), el comportamiento colaborativo estándar se mantiene intacto.
+
 ---
 **ESTE MANUAL DEFINE NUESTRA FORMA DE OPERAR JUNTOS. ¡RESPÉTALO Y EJECÚTALO A LA PERFECCIÓN!**
 ================================================================================

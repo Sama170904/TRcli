@@ -3,9 +3,9 @@ Este escudo se genera dinámicamente analizando tus debilidades y errores de las
 
 > [!IMPORTANT]
 > **ALERTAS CONDUCTUALES CRÍTICAS PARA HOY:**
-> *   **IGNORAR RESISTENCIA** (Detectado en 66.7% de las sesiones - 20 veces):
+> *   **IGNORAR RESISTENCIA** (Detectado en 67.7% de las sesiones - 21 veces):
 >     *   *Acción Correctiva:* Antes de abrir un corto/largo, verifica que no estés comprando en un soporte macro roto ni vendiendo contra una resistencia institucional intacta. Consulta el mapa de liquidez y no operes en el vacío.
-> *   **FOMO** (Detectado en 56.7% de las sesiones - 17 veces):
+> *   **FOMO** (Detectado en 58.1% de las sesiones - 18 veces):
 >     *   *Acción Correctiva:* Queda **estrictamente prohibido** entrar a mercado. Si el precio se desplaza sin ti, espera un retroceso ordenado al 50% (Equilibrium) del FVG en vela de 5m. Si no retrocede, no hay trade hoy.
 
 ## ⚖️ Reglas Operativas Inquebrantables (Reminder)

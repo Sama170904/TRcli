@@ -33,39 +33,78 @@ def main():
     script_dir = Path(__file__).parent.resolve()
     journal_dir = script_dir.parent
     
-    # 1. Escaneo de Conceptos (01-concepts/)
+    # 1. Escaneo de Conceptos (01-concepts/ y subcarpetas recursivamente, incluyendo mentores)
     concepts_dir = journal_dir / "01-concepts"
     concept_keywords = {}
+    mentor_notes_mapped = 0
     if concepts_dir.exists():
-        for f in concepts_dir.glob("*.md"):
+        for f in concepts_dir.rglob("*.md"):
             concept_name = f.stem.lower()
-            # Crear alias comunes para cada concepto para mejorar el mapeo
+            
+            # Identificar si está en la carpeta de mentores
+            is_mentor = "mentors" in f.parts
+            mentor_name = ""
+            if is_mentor:
+                mentor_idx = f.parts.index("mentors")
+                if len(f.parts) > mentor_idx + 1:
+                    mentor_name = f.parts[mentor_idx + 1]
+            
+            # Crear alias y palabras clave comunes
             keywords = [concept_name]
-            if "fair value gap" in concept_name:
+            clean_stem = re.sub(r'^\d+[-\s_]*', '', f.stem).lower()
+            clean_stem_spaces = clean_stem.replace("-", " ").replace("_", " ")
+            keywords.extend([clean_stem, clean_stem_spaces])
+            
+            if "fair value gap" in concept_name or "fvg" in concept_name:
                 keywords.extend(["fvg", "fair value gap", "imbalance"])
-            elif "ifvg" in concept_name:
+            if "ifvg" in concept_name or "inverse Fvg" in concept_name or "inverse fvg" in concept_name:
                 keywords.extend(["ifvg", "inverse fvg", "fvg invertido", "inversion fvg"])
-            elif "order block" in concept_name:
+            if "order block" in concept_name or "orderblock" in concept_name or "ob" in concept_name:
                 keywords.extend(["ob ", "order block", "bloque de ordenes", "orderblock"])
-            elif "smt" in concept_name:
+            if "smt" in concept_name:
                 keywords.extend(["smt", "divergencia smt", "smt divergence"])
-            elif "liquidity sweep" in concept_name:
+            if "liquidity sweep" in concept_name or "sweep" in concept_name:
                 keywords.extend(["sweep", "barrida de liquidez", "liquidity sweep", "barrido", "ssl", "bsl"])
-            elif "breaker" in concept_name:
+            if "breaker" in concept_name:
                 keywords.extend(["breaker", "breaker block"])
-            elif "balanced price range" in concept_name:
+            if "balanced price range" in concept_name or "bpr" in concept_name:
                 keywords.extend(["bpr", "balanced price range", "rango de precio balanceado"])
-            elif "volume imbalance" in concept_name:
+            if "volume imbalance" in concept_name or "vi" in concept_name:
                 keywords.extend(["vi ", "volume imbalance", "desequilibrio de volumen"])
-            elif "displacement" in concept_name:
+            if "displacement" in concept_name:
                 keywords.extend(["desplazamiento", "displacement"])
-            elif "change of character" in concept_name:
+            if "character" in concept_name or "choch" in concept_name:
                 keywords.extend(["choch", "change of character"])
-            elif "break of structure" in concept_name:
+            if "structure" in concept_name or "bos" in concept_name:
                 keywords.extend(["bos", "break of structure"])
+            if "footprint" in concept_name:
+                keywords.extend(["footprint", "flujo de ordenes", "order flow"])
+            if "volume profile" in concept_name:
+                keywords.extend(["volume profile", "perfil de volumen", "poc", "naked poc", "value area"])
+            if "delta" in concept_name:
+                keywords.extend(["delta", "cumulative delta", "cvd"])
                 
-            concept_keywords[f.stem] = list(set(keywords))
-        print(f"✅ Mapeados {len(concept_keywords)} conceptos de {concepts_dir.name}/")
+            # Agregar wikilinks de Obsidian
+            keywords.append(f"[[{f.stem}]]")
+            if clean_stem != f.stem.lower():
+                keywords.append(f"[[{clean_stem}]]")
+                
+            # Nombrar la característica predictora
+            if is_mentor and mentor_name:
+                feature_key = f"mentor_{mentor_name}_{clean_stem}".replace("-", "_").replace(" ", "_")
+                mentor_notes_mapped += 1
+            else:
+                feature_key = f"concept_{f.stem.lower()}".replace("-", "_").replace(" ", "_")
+                
+            # Filtrar palabras clave
+            filtered_kws = []
+            for kw in set(keywords):
+                kw_s = kw.strip()
+                if len(kw_s) >= 3 or kw_s in ["ob", "vi", "es", "nq"]:
+                    filtered_kws.append(kw_s)
+            concept_keywords[feature_key] = filtered_kws
+            
+        print(f"✅ Mapeados {len(concept_keywords)} conceptos totales (de los cuales {mentor_notes_mapped} son notas de mentores) de {concepts_dir.name}/")
     else:
         print("⚠️ No se encontró la carpeta 01-concepts/. Se usarán confluencias básicas.")
 
@@ -180,17 +219,21 @@ def main():
         # Unificar notas y autopsia para el análisis de texto
         full_text_notes = trade_notes + " " + autopsy_text
         
-        # 4. Extracción de características basadas en conceptos de 01-concepts/
+        # 4. Extracción de características basadas en conceptos de 01-concepts/ y de mentores
         concept_features = {}
-        for c_name, keywords in concept_keywords.items():
-            feature_key = f"concept_{c_name.lower().replace(' ', '_')}"
+        for feat_key, keywords in concept_keywords.items():
             has_concept = 0
             for kw in keywords:
-                # Búsqueda exacta de palabra límite
-                if re.search(rf"\b{re.escape(kw)}\b", full_text_notes):
-                    has_concept = 1
-                    break
-            concept_features[feature_key] = has_concept
+                # Búsqueda exacta de palabra límite, excepto para wikilinks que contienen corchetes
+                if kw.startswith("[[") and kw.endswith("]]"):
+                    if kw in full_text_notes:
+                        has_concept = 1
+                        break
+                else:
+                    if re.search(rf"\b{re.escape(kw)}\b", full_text_notes, re.IGNORECASE):
+                        has_concept = 1
+                        break
+            concept_features[feat_key] = has_concept
             
         # 5. Extracción de confluencias de journal.json
         journal_confs = [c.strip().lower() for c in t.get("confluences", "").split(";") if c.strip()]
@@ -314,6 +357,7 @@ def main():
     # Agrupar importancias en categorías para análisis conceptual
     categories = {
         "Conceptos Técnicos (SMC / FVG / OB)": 0.0,
+        "Notas y Teoría de Mentores": 0.0,
         "Sesgos de Comportamiento / Psicología": 0.0,
         "Contexto de Sesión / Pre-Trade Bias / Delta": 0.0,
         "Gestión Operativa / Configuración del Trade": 0.0
@@ -321,7 +365,9 @@ def main():
     
     for i, col in enumerate(X.columns):
         imp_val = importances[i]
-        if col.startswith("concept_") or col.startswith("raw_conf_"):
+        if col.startswith("mentor_"):
+            categories["Notas y Teoría de Mentores"] += imp_val
+        elif col.startswith("concept_") or col.startswith("raw_conf_"):
             categories["Conceptos Técnicos (SMC / FVG / OB)"] += imp_val
         elif col.startswith("err_") or col.startswith("virtue_"):
             categories["Sesgos de Comportamiento / Psicología"] += imp_val
@@ -382,6 +428,13 @@ def main():
             cat_type = "Concepto Técnico"
             clean_name = col_name.replace("concept_", "").replace("_", " ").title()
             impact_str = "El uso explícito de este concepto técnico en la sesión valida o invalida la entrada."
+        elif col_name.startswith("mentor_"):
+            cat_type = "Concepto de Mentor"
+            parts = col_name.split("_")
+            mentor_name = parts[1].title() if len(parts) > 1 else "Mentor"
+            concept_name = " ".join(parts[2:]).title() if len(parts) > 2 else "Concepto"
+            clean_name = f"[{mentor_name}] {concept_name}"
+            impact_str = f"Concepto o lección de la metodología de {mentor_name} detectado en la sesión."
         elif col_name.startswith("raw_conf_"):
             cat_type = "Confluencia"
             clean_name = col_name.replace("raw_conf_", "").title()
