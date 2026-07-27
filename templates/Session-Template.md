@@ -44,6 +44,56 @@ result: "BE"
 
 ---
 
+## 🎯 CONTEXT SCORE — EVALUACIÓN DE CONTEXTO POR TRADE
+> Referencia completa del sistema: [ground_truth.md Sección J](../ground_truth.md) | [configuracion.md Sección 6.G](../configuracion.md)
+
+### Trade #1: Context Score
+#### Nivel 0 — Gates Eliminatorias
+| Gate | ¿Pasó? |
+|:---|:---:|
+| Dentro de Killzone | ✅ / ❌ |
+| R:R > 1:1 | ✅ / ❌ |
+| Sin noticias Red Folder en 5 min | ✅ / ❌ |
+| POI no mitigado (1er toque) | ✅ / ❌ |
+| P/D correcto (Rango) o A favor de tendencia (Expansión) | ✅ / ❌ |
+
+#### Nivel 1 — Peso Máximo (×3 pts c/u)
+| Factor | Presente | Pts |
+|:---|:---:|:---:|
+| DOL claro y definido | ✅ / ❌ | 3 / 0 |
+| LRLR a favor (camino limpio) | ✅ / ❌ | 3 / 0 |
+| Sin resistencia macro cerca del entry | ✅ / ❌ | 3 / 0 |
+| Calidad del nivel de reacción (TF del POI) | ✅ / ❌ | 3 / 0 |
+
+#### Nivel 2 — Peso Alto (×2 pts c/u)
+| Factor | Presente | Pts |
+|:---|:---:|:---:|
+| HTF Bias alineado (4H/1D) | ✅ / ❌ | 2 / 0 |
+| Tipo de día + Posición VA correcta | ✅ / ❌ | 2 / 0 |
+| Fase del PO3 correcta | ✅ / ❌ | 2 / 0 |
+| Sin FVGs en contra de mi dirección | ✅ / ❌ | 2 / 0 |
+
+#### Nivel 3 — Confluencias (×1 pt c/u)
+| Factor | Presente | Pts |
+|:---|:---:|:---:|
+| SMT Divergence | ✅ / ❌ | 1 / 0 |
+| Order Flow / Delta confirmando | ✅ / ❌ | 1 / 0 |
+| Sweep de sesión previa confirmado | ✅ / ❌ | 1 / 0 |
+| Protected H/L como DOL | ✅ / ❌ | 1 / 0 |
+| Velocidad de formación FVG macro (agresivo) | ✅ / ❌ | 1 / 0 |
+| Sin BPR activo en contra | ✅ / ❌ | 1 / 0 |
+
+**CONTEXT SCORE TOTAL: __ / 26 pts → Clasificación: [A+ / B / C / No Operable]**
+
+| Rango | Clasificación |
+|:---:|:---|
+| 22-26 | Setup A+ → Full size |
+| 16-21 | Setup B → Tamaño normal |
+| 10-15 | Setup C → Reducir o no operar |
+| 0-9 | No operable → El Mech Model era irrelevante |
+
+---
+
 ## 🧠 CENTRO DE APRENDIZAJE Y RETROALIMENTACIÓN (MÉTODO STEENBARGER)
 
 > [!TIP]

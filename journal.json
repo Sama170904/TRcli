@@ -1,5 +1,22 @@
 [
   {
+    "id": "1785073259000",
+    "datetime": "2026-07-27T08:40",
+    "instrument": "MNQ",
+    "session": "NY AM KZ",
+    "direction": "Short",
+    "entry": 28504.75,
+    "sl": 28467.0,
+    "tp": 28234.0,
+    "exit": 28234.0,
+    "result": "Win",
+    "rr": 7.17,
+    "confluences": "Inverse FVG / inverse structure present; At HTF PD array (OB / FVG / Breaker); In Kill Zone (London / NY AM / PM); SMT divergence present; Bookmap Order Flow Absorption",
+    "notes": "Short perfecto en MNQ (1 contrato) basado en el iFVG de 1m alineado con la fuerza relativa (MNQ mercado más débil) y la absorción pasiva de Bookmap en 28507.50 (4131 contratos). Ejecución disciplinada con TP1 parcial y salida completa en la demanda de 1H a 28234.00 (+270.75 pts / +.50 USD).",
+    "mae": 7.75,
+    "mfe": 270.75
+  },
+  {
     "id": "1784898427000",
     "datetime": "2026-07-24T08:47",
     "instrument": "MES",

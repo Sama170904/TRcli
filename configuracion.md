@@ -372,6 +372,70 @@ flowchart TD
   *   **Cómo funciona:** Si Antigravity emite un análisis basado en las reglas de la bóveda y el usuario lo contradice, Antigravity re-examina su razonamiento pero NO capitula si su posición está respaldada por una regla documentada. Cita la fuente exacta y mantiene su posición con firmeza profesional. Solo cambia de posición ante evidencia nueva o un error factual demostrable.
   *   **Alcance:** Aplica EXCLUSIVAMENTE en contexto de trading. En contextos no-trading (programación, web, preguntas generales), el comportamiento colaborativo estándar se mantiene intacto.
 
+  ### G. Context Score — Sistema de Puntuación de Contexto (20 Factores)
+  *   **Problema que resuelve:** El contexto representa el 80% del edge operativo, pero es percibido como cualitativo e imposible de medir. El trader tiende a ignorar el contexto porque el Mech Model (iFVG) es seductoramente binario y fácil de identificar, lo que genera adicción al gatillo mecánico y pérdidas recurrentes por operar sin contexto favorable.
+  *   **Implementación:** Sección J de [ground_truth.md](file:///C:/Users/rsama/Documents/proyecto-geminicli/trading-journal/ground_truth.md). Se evalúa antes de cada trade y se registra en la bitácora de sesión.
+  *   **Cómo funciona:** Descompone el "contexto" en 20 factores medibles matemáticamente, organizados en 4 niveles jerárquicos:
+
+  #### Nivel 0 — Gates Eliminatorias (Si falla 1 = NO TRADE)
+  Estos filtros son binarios. Si alguno falla, el trade se cancela sin importar el score:
+
+  | Gate | Condición de Activación |
+  |:---|:---|
+  | Dentro de Killzone | Siempre activa |
+  | R:R > 1:1 | Siempre activa |
+  | Sin noticias Red Folder en 5 min | Siempre activa |
+  | POI no mitigado (1er toque) | Siempre activa |
+  | Premium/Discount correcto | Solo en días de **Rango** |
+  | A favor de la tendencia (no contratendencia) | Solo en días de **Expansión** |
+
+  > **Nota importante:** La clasificación del tipo de día (Expansión/Rango) se determina ANTES de evaluar las gates, ya que determina cuáles gates se activan.
+
+  #### Nivel 1 — Peso Máximo (×3 pts c/u = 12 pts máx)
+  Los 4 factores con mayor correlación al resultado, respaldados por las estadísticas del journal y las reglas de mentores:
+
+  | Factor | Fundamentación |
+  |:---|:---|
+  | **DOL claro y definido** | Todo movimiento institucional va DE liquidez A liquidez. Sin DOL = sin destino. (PB/PO3, TJR) |
+  | **LRLR a favor (camino limpio al DOL)** | Si hay FVGs inmitigados bloqueando la ruta, el precio se estanca en cada uno. (PB/LRLR, BionicNQ: *"Si un FVG acorta la expansión, no se opera"*) |
+  | **Sin resistencia/soporte macro cerca del entry** | Error #1 del journal con 67.7% de incidencia. La causa estadísticamente más frecuente de pérdidas. (psych_profile.json) |
+  | **Calidad del nivel de reacción** | Monthly FVG > Weekly OB > Daily FVG > Session Level. A mayor TF del POI, mayor compromiso institucional. (Supreme, TJR) |
+
+  #### Nivel 2 — Peso Alto (×2 pts c/u = 8 pts máx)
+
+  | Factor | Fundamentación |
+  |:---|:---|
+  | **HTF Bias alineado (4H/1D)** | Operar contra estructura HTF sin CHOCH macro = suicidio estadístico. (TJR, PB) |
+  | **Tipo de día + Posición VA** | Cramz: apertura dentro del VA = Balance. Fuera = Imbalance direccional. |
+  | **Fase del PO3 correcta** | Entrar en Manipulación pensando que es Distribución = trampa institucional. |
+  | **FVGs en contra de mi dirección** | FVGs inmitigados opuestos actúan como imanes de retroceso que frenan la expansión. |
+
+  #### Nivel 3 — Confluencias (×1 pt c/u = 6 pts máx)
+
+  | Factor | Factor |
+  |:---|:---|
+  | SMT Divergence | Order Flow / Delta confirmando |
+  | Sweep de sesión previa confirmado | Protected H/L como DOL |
+  | Velocidad de formación del FVG macro | BPR activo en contra |
+
+  #### Umbrales de Decisión (Score Máximo: 26 pts)
+
+  | Rango | Clasificación | Acción |
+  |:---:|:---|:---|
+  | **22-26** | Setup A+ | Full size, máxima confianza |
+  | **16-21** | Setup B | Operable con tamaño normal |
+  | **10-15** | Setup C | Ambiguo, reducir tamaño o no operar |
+  | **0-9** | No operable | El Mech Model es irrelevante aquí |
+
+  *   **Por qué se diseñó con pesos diferenciados:** No todos los factores de contexto impactan igual. Los 4 factores de Nivel 1 fueron seleccionados cruzando las reglas de mentores con las estadísticas reales del journal (67.7% de pérdidas por ignorar resistencia macro, y la regla explícita de BionicNQ sobre R:R). Los factores de Nivel 3 (como SMT) son confluencias que suman probabilidad pero no definen el trade por sí solos (PB: *"SMT solo como confluencia, nunca setup aislado"*).
+
+  ### H. Registro de Cambios Arquitectónicos (Changelog)
+  *   **2026-07-24:** Corrección de `"instrument": "ES"` a `"MES"` en trades 1 y 2 de journal.json (auditoría detectó confusión MES vs ES).
+  *   **2026-07-24:** Corrección de `save_session_data.py` — 4 bugs críticos: captura dual de MES+MNQ, zona horaria dinámica con `zoneinfo`, ventana de velas a `-n 500`, protección anti-sobreescritura.
+  *   **2026-07-24:** Corrección de regla P/D en AGENTS.md y ground_truth.md — La regla original decía *"P/D deja de importar en Expansión"* pero NO está documentada por PB (quien dice "JAMÁS"). Se reformuló como: *"El rango de referencia se recalcula dinámicamente al intradiario actual"*. Fundamentación: Cramz (Imbalance = direccional).
+  *   **2026-07-24:** Corrección de R:R mínimo de 1:2 a 1:1 en ground_truth.md.
+  *   **2026-07-24:** Creación del Context Score (20 factores, 4 niveles, score máx 26 pts).
+
 ---
 **ESTE MANUAL DEFINE NUESTRA FORMA DE OPERAR JUNTOS. ¡RESPÉTALO Y EJECÚTALO A LA PERFECCIÓN!**
 ================================================================================

@@ -6,7 +6,7 @@
 ---
 
 ## A. MODELO DE ENTRADA (MECH MODEL — 5 FASES)
-1. **Contexto Macro:** Confirmar bias HTF (4H/1D). Si chocan, obedece 1D. Longs en Discount, Shorts en Premium. EXCEPCIÓN: En días de Expansión, Premium/Discount macro deja de importar.
+1. **Contexto Macro:** Confirmar bias HTF (4H/1D). Si chocan, obedece 1D. Longs en Discount, Shorts en Premium. MATIZ PARA EXPANSIÓN: En días de Expansión, el rango de referencia para P/D se recalcula dinámicamente al rango intradiario actual (no al del día anterior). Se permite operar a favor de la tendencia en pullbacks a VWAP SD2/SD3, aunque el precio esté en "Premium" del rango previo. NOTA: Esta regla NO está documentada por PB (quien dice "JAMÁS" sin excepción), sino derivada del framework de Cramz (Imbalance = direccional) y de la lógica de rangos dinámicos.
 2. **Killzone:** Solo operar dentro de London (08:00-11:00 GMT) o NY AM (09:30-10:30 NYT). Fuera de killzone = no trade.
 3. **Fase 1 — Sweep:** El precio DEBE barrer un POI institucional (BSL/SSL de sesión, EQH/EQL). SMT Divergence es opcional pero sin ella el win rate cae al 20%.
 4. **Fase 2 — Desplazamiento + iFVG:** La vela de confirmación DEBE CERRAR CON CUERPO COMPLETO cruzando el FVG, invirtiéndolo. Sin cierre de cuerpo = no hay setup.
@@ -15,7 +15,7 @@
 ## B. GESTIÓN DE RIESGO INQUEBRANTABLE
 - **Riesgo por trade:** Máximo 1% del balance.
 - **Pérdida diaria:** Máximo 2% (2 trades perdedores). Si se alcanza → cerrar plataformas.
-- **R:R mínimo:** 1:2 obligatorio para entrar.
+- **R:R mínimo:** 1:1 obligatorio para entrar.
 - **SL:** Justo fuera del límite lejano del iFVG + 5 ticks de holgura.
 - **TP1:** Al tocar liquidez interna → cerrar 50% y mover SL a BE obligatoriamente.
 - **Prohibido:** Averaging down, sobrelotear tras ganar, mover SL a BE por pánico antes de TP1.
@@ -63,3 +63,38 @@
 - **Fácil (Bajo compromiso):** R-G-R (bajista) o G-R-G (alcista). Alta prob. de convertirse en iFVG.
 - **Moderado:** R-G-G o G-G-R. Requiere más confluencia.
 - **Difícil (Fuerte compromiso):** G-G-G o R-R-R. Si se invierte, el movimiento contratendencia será explosivo.
+
+## J. CONTEXT SCORE — SISTEMA DE PUNTUACIÓN DE CONTEXTO (20 FACTORES)
+El contexto es el 80% del edge. El Mech Model (iFVG) es solo el 20%. Este scorecard cuantifica el contexto.
+
+### Nivel 0 — Gates Eliminatorias (Si falla 1 = NO TRADE)
+- Dentro de Killzone | Siempre activa
+- R:R > 1:1 | Siempre activa
+- Sin noticias Red Folder en 5 min | Siempre activa
+- POI no mitigado (1er toque) | Siempre activa
+- Premium/Discount correcto | Solo en días de RANGO
+- A favor de la tendencia | Solo en días de EXPANSIÓN
+→ La clasificación del tipo de día (Expansión/Rango) se determina ANTES de evaluar las gates.
+
+### Nivel 1 — Peso Máximo (×3 pts c/u = 12 pts máx)
+- DOL claro y definido (target de liquidez identificado)
+- LRLR a favor (camino limpio al DOL, sin FVGs bloqueando)
+- Sin resistencia/soporte macro cerca del entry (Error #1: 67.7%)
+- Calidad del nivel de reacción (Monthly FVG > Weekly OB > Daily FVG > Session Level)
+
+### Nivel 2 — Peso Alto (×2 pts c/u = 8 pts máx)
+- HTF Bias alineado (4H/1D)
+- Tipo de día + Posición VA (Cramz: Balance/Imbalance)
+- Fase del PO3 correcta (no estar entrando en Manipulación)
+- FVGs en contra de mi dirección (inmitigados opuestos)
+
+### Nivel 3 — Confluencias (×1 pt c/u = 6 pts máx)
+- SMT Divergence | Order Flow Delta confirmando
+- Sweep de sesión previa confirmado | Protected H/L como DOL
+- Velocidad de formación del FVG macro | BPR activo en contra
+
+### Umbrales de Decisión (Score Máximo: 26 pts)
+- 22-26: Setup A+ → Full size, máxima confianza
+- 16-21: Setup B → Operable con tamaño normal
+- 10-15: Setup C → Ambiguo, reducir tamaño o no operar
+- 0-9: NO OPERAR. El Mech Model es irrelevante aquí.
